@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply m-0 font-sans antialiased;
+  }
+
+  code {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  select option {
+    @apply bg-white text-gray-800;
+  }
+}
