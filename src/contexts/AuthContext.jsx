@@ -14,19 +14,23 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await userApi.login(email, password);
-      // Nếu backend trả về { _id, username, email, role, token }
-      const user = {
-        _id: res._id,
-        username: res.username,
-        email: res.email,
-        role: res.role,
-      };
-      const token = res.token;
-      setCurrentUser(user);
-      setToken(token);
-      localStorage.setItem('token', token);
-      return user;
+      // API trả về trực tiếp object chứa user info và token
+      const userData = res; // Không cần .data vì response trả về trực tiếp
+      setToken(userData.token);
+      setCurrentUser({
+        _id: userData._id,
+        username: userData.username,
+        email: userData.email,
+        role: userData.role
+      });
+      localStorage.setItem('token', userData.token);
+      console.log('Login success:', userData); // Debug log
+      return userData;
     } catch (error) {
+      console.log('Login error:', error); // Debug log
+      setCurrentUser(null);
+      setToken('');
+      localStorage.removeItem('token');
       throw error;
     }
   };
@@ -48,10 +52,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
   };
 
-  // Lấy thông tin user hiện tại nếu có token
+  // Chỉ gọi /me khi reload page và có token
   useEffect(() => {
     const fetchMe = async () => {
-      if (token) {
+      if (token && !currentUser) {
         try {
           const { user } = await userApi.getMe(token);
           setCurrentUser(user);
@@ -64,7 +68,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     fetchMe();
-  }, [token]);
+  }, [token, currentUser]);
 
   const isAdmin = () => currentUser?.role === 'admin';
   const isAuthenticated = () => !!currentUser;

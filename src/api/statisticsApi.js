@@ -1,11 +1,13 @@
 import axios from 'axios';
 
-const EQUIPMENT_API = 'http://localhost:5001/api/equipment';
-const BORROW_API = 'http://localhost:5001/api/borrow/admin';
+const EQUIPMENT_API = 'https://second-hand-club.onrender.com/api/equipment';
+const BORROW_API = 'https://second-hand-club.onrender.com/api/borrow/admin';
 
 export const getMostBorrowed = async (token, month, year) => {
   let url = `${EQUIPMENT_API}/stats/most-borrowed`;
-  if (month && year) url += `?month=${month}&year=${year}`;
+  if (month && year) {
+    url += `?month=${month}&year=${year}`;
+  }
   const res = await axios.get(url, {
     headers: { Authorization: `Bearer ${token}` }
   });

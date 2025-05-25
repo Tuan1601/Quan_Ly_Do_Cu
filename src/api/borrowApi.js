@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api/borrow/admin';
+const API_URL = 'https://second-hand-club.onrender.com/api/borrow/admin';
 
 export const getAllBorrowRequests = async (token, status = '') => {
   const res = await axios.get(`${API_URL}/all${status ? `?status=${status}` : ''}`, {

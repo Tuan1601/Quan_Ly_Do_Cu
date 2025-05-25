@@ -9,7 +9,11 @@ const AdminRoute = () => {
     return <div>Loading...</div>;
   }
 
-  return isAuthenticated() && isAdmin() ? <Outlet /> : <Navigate to="/admin/login" />;
+  if (!isAuthenticated() || !isAdmin()) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default AdminRoute; 

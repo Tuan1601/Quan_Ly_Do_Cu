@@ -11,6 +11,17 @@ const STATUS_LABELS = {
   overdue: 'Quá hạn',
 };
 
+const STATUS_COLORS = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-blue-100 text-blue-800',
+  rejected: 'bg-red-100 text-red-800',
+  borrowed: 'bg-green-100 text-green-800',
+  returned: 'bg-gray-100 text-gray-800',
+  overdue: 'bg-red-100 text-red-800',
+};
+
+const PAGE_SIZE = 6;
+
 const RequestsList = () => {
   const { token } = useAuth();
   const [requests, setRequests] = useState([]);
@@ -20,12 +31,29 @@ const RequestsList = () => {
   const [detail, setDetail] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Advanced filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    startDate: '',
+    endDate: '',
+    minQuantity: '',
+    maxQuantity: '',
+    equipment: '',
+    user: ''
+  });
 
   const fetchRequests = async () => {
     setLoading(true);
     try {
       const data = await borrowApi.getAllBorrowRequests(token, filter);
       setRequests(data);
+      setError('');
     } catch (err) {
       setError('Không thể tải danh sách yêu cầu.');
     }
@@ -34,8 +62,74 @@ const RequestsList = () => {
 
   useEffect(() => {
     if (token) fetchRequests();
-    // eslint-disable-next-line
   }, [token, filter]);
+
+  // Filter requests
+  const filteredRequests = requests.filter(req => {
+    if (!req) return false;
+
+    const matchSearch = !filters.search || 
+      req.user?.username?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      req.user?.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      req.equipment?.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      req.reason?.toLowerCase().includes(filters.search.toLowerCase());
+
+    const matchStartDate = !filters.startDate || 
+      new Date(req.borrowDate) >= new Date(filters.startDate);
+
+    const matchEndDate = !filters.endDate || 
+      new Date(req.borrowDate) <= new Date(filters.endDate);
+
+    const matchMinQuantity = !filters.minQuantity || 
+      req.quantity >= Number(filters.minQuantity);
+
+    const matchMaxQuantity = !filters.maxQuantity || 
+      req.quantity <= Number(filters.maxQuantity);
+
+    const matchEquipment = !filters.equipment || 
+      req.equipment?.name?.toLowerCase().includes(filters.equipment.toLowerCase());
+
+    const matchUser = !filters.user || 
+      req.user?.username?.toLowerCase().includes(filters.user.toLowerCase()) ||
+      req.user?.email?.toLowerCase().includes(filters.user.toLowerCase());
+
+    return matchSearch && matchStartDate && matchEndDate && 
+           matchMinQuantity && matchMaxQuantity && matchEquipment && matchUser;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: '',
+      startDate: '',
+      endDate: '',
+      minQuantity: '',
+      maxQuantity: '',
+      equipment: '',
+      user: ''
+    });
+    setCurrentPage(1);
+  };
 
   const openDetail = async (id) => {
     setActionLoading(true);
@@ -43,7 +137,8 @@ const RequestsList = () => {
       const data = await borrowApi.getBorrowRequestById(id, token);
       setDetail(data);
       setAdminNotes(data.adminNotes || '');
-    } catch {
+      setError('');
+    } catch (err) {
       setError('Không thể tải chi tiết yêu cầu.');
     }
     setActionLoading(false);
@@ -52,6 +147,7 @@ const RequestsList = () => {
   const closeDetail = () => {
     setDetail(null);
     setAdminNotes('');
+    setConfirmAction(null);
   };
 
   const handleStatus = async (status) => {
@@ -61,7 +157,7 @@ const RequestsList = () => {
       await borrowApi.updateBorrowRequestStatus(detail._id, status, adminNotes, token);
       closeDetail();
       fetchRequests();
-    } catch {
+    } catch (err) {
       setError('Không thể cập nhật trạng thái.');
     }
     setActionLoading(false);
@@ -74,8 +170,9 @@ const RequestsList = () => {
       await borrowApi.confirmBorrow(detail._id, token);
       closeDetail();
       fetchRequests();
-    } catch {
-      setError('Không thể xác nhận mượn.');
+      setError('');
+    } catch (err) {
+      setError('Không thể xác nhận mượn. Vui lòng thử lại.');
     }
     setActionLoading(false);
   };
@@ -87,89 +184,358 @@ const RequestsList = () => {
       await borrowApi.confirmReturn(detail._id, token);
       closeDetail();
       fetchRequests();
-    } catch {
-      setError('Không thể xác nhận trả.');
+      setError('');
+    } catch (err) {
+      setError('Không thể xác nhận trả. Vui lòng thử lại.');
     }
     setActionLoading(false);
+  };
+
+  const showConfirmDialog = (action, message) => {
+    setConfirmAction({ action, message });
   };
 
   return (
     <div className="p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-        <h2 className="text-2xl font-bold">Quản lý yêu cầu mượn</h2>
-        <select
-          className="border px-3 py-2 rounded"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="pending">Chờ duyệt</option>
-          <option value="approved">Đã duyệt</option>
-          <option value="rejected">Từ chối</option>
-          <option value="borrowed">Đã mượn</option>
-          <option value="returned">Đã trả</option>
-          <option value="overdue">Quá hạn</option>
-        </select>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Quản lý yêu cầu mượn
+        </h2>
+        <div className="flex gap-2 items-center">
+          <select
+            className="border px-3 py-2 rounded min-w-[150px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="rejected">Từ chối</option>
+            <option value="borrowed">Đã mượn</option>
+            <option value="returned">Đã trả</option>
+            <option value="overdue">Quá hạn</option>
+          </select>
+          <button
+            className="px-3 py-2 rounded border hover:bg-gray-100 flex items-center gap-1 transition-colors"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            {showFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
+          </button>
+        </div>
       </div>
-      {error && <div className="text-red-600 mb-2">{error}</div>}
-      {loading ? (
-        <div>Đang tải...</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 border">Người mượn</th>
-                <th className="px-4 py-2 border">Thiết bị</th>
-                <th className="px-4 py-2 border">Ngày mượn</th>
-                <th className="px-4 py-2 border">Ngày trả</th>
-                <th className="px-4 py-2 border">Trạng thái</th>
-                <th className="px-4 py-2 border">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((req) => (
-                <tr key={req._id}>
-                  <td className="px-4 py-2 border">{req.user?.username || req.user?.email}</td>
-                  <td className="px-4 py-2 border">{req.equipment?.name}</td>
-                  <td className="px-4 py-2 border">{req.borrowDate ? new Date(req.borrowDate).toLocaleDateString() : ''}</td>
-                  <td className="px-4 py-2 border">{req.returnDate ? new Date(req.returnDate).toLocaleDateString() : ''}</td>
-                  <td className="px-4 py-2 border">{STATUS_LABELS[req.status] || req.status}</td>
-                  <td className="px-4 py-2 border text-center">
-                    <button
-                      className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                      onClick={() => openDetail(req._id)}
-                    >
-                      Chi tiết
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+      {/* Advanced Filters */}
+      {showFilters && (
+        <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Tìm kiếm</label>
+              <input
+                type="text"
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Tìm theo tên, email..."
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Từ ngày</label>
+              <input
+                type="date"
+                name="startDate"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Đến ngày</label>
+              <input
+                type="date"
+                name="endDate"
+                value={filters.endDate}
+                onChange={handleFilterChange}
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Số lượng từ</label>
+              <input
+                type="number"
+                name="minQuantity"
+                value={filters.minQuantity}
+                onChange={handleFilterChange}
+                min="1"
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Số lượng đến</label>
+              <input
+                type="number"
+                name="maxQuantity"
+                value={filters.maxQuantity}
+                onChange={handleFilterChange}
+                min="1"
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Thiết bị</label>
+              <input
+                type="text"
+                name="equipment"
+                value={filters.equipment}
+                onChange={handleFilterChange}
+                placeholder="Tên thiết bị..."
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Người mượn</label>
+              <input
+                type="text"
+                name="user"
+                value={filters.user}
+                onChange={handleFilterChange}
+                placeholder="Tên hoặc email..."
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end mt-4">
+            <button
+              className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 transition-colors flex items-center gap-1"
+              onClick={resetFilters}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Đặt lại
+            </button>
+          </div>
         </div>
       )}
+
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded mb-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+          <p className="mt-2 text-gray-500">Đang tải dữ liệu...</p>
+        </div>
+      ) : (
+        <>
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="scrollbar-custom overflow-x-auto">
+              <style jsx>{`
+                .scrollbar-custom::-webkit-scrollbar {
+                  height: 8px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-track {
+                  background: #f1f1f1;
+                  border-radius: 4px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-thumb {
+                  background: #ddd;
+                  border-radius: 4px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+                  background: #cdcdcd;
+                }
+              `}</style>
+              <table className="min-w-full divide-y divide-gray-200 border-collapse">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="sticky left-0 z-10 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
+                      Người mượn
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
+                      Thiết bị
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20 border-b">
+                      SL
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                      Lý do mượn
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
+                      Ngày mượn
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
+                      Ngày trả dự kiến
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
+                      Ngày trả thực tế
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
+                      Trạng thái
+                    </th>
+                    <th scope="col" className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24 border-b">
+                      Thao tác
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedRequests.map((req) => (
+                    <tr key={req._id} className="hover:bg-gray-50">
+                      <td className="sticky left-0 z-10 bg-white px-4 py-3 group-hover:bg-gray-50">
+                        <div className="text-sm font-medium text-gray-900">{req.user?.username || 'N/A'}</div>
+                        <div className="text-xs text-gray-500">{req.user?.email}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm">{req.equipment?.name || 'N/A'}</div>
+                        <div className="text-xs text-gray-500 truncate max-w-[200px]">{req.equipment?.description}</div>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {req.quantity || 1}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm text-gray-500 truncate max-w-[200px]">{req.reason}</div>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
+                        {req.borrowDate ? new Date(req.borrowDate).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
+                        {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
+                        {req.actualReturnDate ? new Date(req.actualReturnDate).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${STATUS_COLORS[req.status]}`}>
+                          {STATUS_LABELS[req.status]}
+                        </span>
+                      </td>
+                      <td className="sticky right-0 z-10 bg-white px-4 py-3 text-right group-hover:bg-gray-50">
+                        <button
+                          onClick={() => openDetail(req._id)}
+                          className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors"
+                        >
+                          Chi tiết
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+            <div className="text-sm text-gray-700 whitespace-nowrap">
+              Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} đến {Math.min(currentPage * PAGE_SIZE, filteredRequests.length)} trong số {filteredRequests.length} yêu cầu
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="px-3 py-1 rounded border bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Trước
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i}
+                  className={`px-3 py-1 rounded border transition-colors min-w-[2.5rem] ${
+                    currentPage === i + 1 
+                      ? 'bg-indigo-600 text-white border-indigo-600 font-medium' 
+                      : 'bg-white hover:bg-gray-50'
+                  }`}
+                  onClick={() => handlePageChange(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                className="px-3 py-1 rounded border bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Sau
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Modal chi tiết yêu cầu */}
       {detail && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
             <h3 className="text-xl font-bold mb-4">Chi tiết yêu cầu mượn</h3>
-            <div className="mb-2"><b>Người mượn:</b> {detail.user?.username || detail.user?.email}</div>
-            <div className="mb-2"><b>Email:</b> {detail.user?.email}</div>
-            <div className="mb-2"><b>Thiết bị:</b> {detail.equipment?.name}</div>
-            <div className="mb-2"><b>Ngày mượn:</b> {detail.borrowDate ? new Date(detail.borrowDate).toLocaleString() : ''}</div>
-            <div className="mb-2"><b>Ngày trả:</b> {detail.returnDate ? new Date(detail.returnDate).toLocaleString() : ''}</div>
-            <div className="mb-2"><b>Lý do:</b> {detail.reason}</div>
-            <div className="mb-2"><b>Trạng thái:</b> {STATUS_LABELS[detail.status] || detail.status}</div>
-            <div className="mb-2"><b>Ghi chú admin:</b></div>
-            <textarea
-              className="w-full border px-2 py-1 rounded mb-2"
-              value={adminNotes}
-              onChange={e => setAdminNotes(e.target.value)}
-              rows={2}
-              disabled={detail.status !== 'pending' && detail.status !== 'approved'}
-            />
-            <div className="flex flex-wrap gap-2 justify-end mt-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              <div>
+                <h4 className="font-semibold mb-2">Thông tin người mượn</h4>
+                <div className="space-y-2">
+                  <div><b>Họ tên:</b> {detail.user?.username}</div>
+                  <div><b>Email:</b> {detail.user?.email}</div>
+                  <div><b>Số điện thoại:</b> {detail.user?.phoneNumber}</div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold mb-2">Thông tin thiết bị</h4>
+                <div className="space-y-2">
+                  <div><b>Tên thiết bị:</b> {detail.equipment?.name}</div>
+                  <div><b>Mô tả:</b> {detail.equipment?.description}</div>
+                  <div><b>Số lượng khả dụng:</b> {detail.equipment?.availableQuantity}/{detail.equipment?.totalQuantity}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <div><b>Ngày mượn:</b> {detail.borrowDate ? new Date(detail.borrowDate).toLocaleString() : ''}</div>
+              <div><b>Ngày trả:</b> {detail.returnDate ? new Date(detail.returnDate).toLocaleString() : ''}</div>
+              <div><b>Lý do mượn:</b> {detail.reason}</div>
+              <div>
+                <b>Trạng thái:</b>
+                <span className={`ml-2 px-2 py-1 rounded text-sm ${STATUS_COLORS[detail.status]}`}>
+                  {STATUS_LABELS[detail.status]}
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block font-semibold mb-2">Ghi chú admin:</label>
+              <textarea
+                className="w-full border px-3 py-2 rounded"
+                value={adminNotes}
+                onChange={e => setAdminNotes(e.target.value)}
+                rows={3}
+                disabled={detail.status !== 'pending'}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 justify-end">
               <button
                 className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
                 onClick={closeDetail}
@@ -177,6 +543,7 @@ const RequestsList = () => {
               >
                 Đóng
               </button>
+
               {detail.status === 'pending' && (
                 <>
                   <button
@@ -195,24 +562,59 @@ const RequestsList = () => {
                   </button>
                 </>
               )}
+
               {detail.status === 'approved' && (
                 <button
                   className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                  onClick={handleConfirmBorrow}
+                  onClick={() => showConfirmDialog('borrow', 'Xác nhận cho mượn thiết bị? Số lượng khả dụng sẽ giảm 1.')}
                   disabled={actionLoading}
                 >
                   Xác nhận đã mượn
                 </button>
               )}
+
               {detail.status === 'borrowed' && (
                 <button
                   className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
-                  onClick={handleConfirmReturn}
+                  onClick={() => showConfirmDialog('return', 'Xác nhận đã trả thiết bị? Số lượng khả dụng sẽ tăng 1.')}
                   disabled={actionLoading}
                 >
                   Xác nhận đã trả
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xác nhận */}
+      {confirmAction && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Xác nhận thao tác</h3>
+            <p className="mb-6">{confirmAction.message}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                onClick={() => setConfirmAction(null)}
+                disabled={actionLoading}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => {
+                  if (confirmAction.action === 'borrow') {
+                    handleConfirmBorrow();
+                  } else if (confirmAction.action === 'return') {
+                    handleConfirmReturn();
+                  }
+                  setConfirmAction(null);
+                }}
+                disabled={actionLoading}
+              >
+                Xác nhận
+              </button>
             </div>
           </div>
         </div>
