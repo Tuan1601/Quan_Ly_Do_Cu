@@ -433,14 +433,7 @@ const History = () => {
 
                 {selectedItem.status === 'borrowed' && (
                   <div className="pt-4 border-t border-gray-200">
-                    <button
-                      onClick={() => {
-                        // Implement return logic here
-                      }}
-                      className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                    >
-                      Trả thiết bị
-                    </button>
+                    {/* Đã bỏ nút Trả thiết bị ở đây */}
                   </div>
                 )}
               </div>
