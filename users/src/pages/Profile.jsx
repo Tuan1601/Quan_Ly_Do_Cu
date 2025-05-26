@@ -11,7 +11,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [formData, setFormData] = useState({
     username: user?.username || '',
     phoneNumber: user?.phoneNumber || ''
@@ -67,18 +67,7 @@ const Profile = () => {
   };
 
   const handleAvatarClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    setIsEditingAvatar(true);
   };
 
   return (
@@ -116,22 +105,15 @@ const Profile = () => {
                 <button
                   onClick={handleAvatarClick}
                   className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                  type="button"
                 >
                   <FaCamera className="text-white text-xl" />
                 </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
               </div>
 
               <div className="flex-grow">
                 <h2 className="text-xl font-bold text-gray-900 mb-1">{user?.username}</h2>
                 <p className="text-gray-600">{user?.email}</p>
-                <p className="text-gray-600 mt-1">MSSV: {user?.studentId}</p>
               </div>
 
               <Link
@@ -142,6 +124,36 @@ const Profile = () => {
                 <span>Đổi mật khẩu</span>
               </Link>
             </div>
+
+            {isEditingAvatar ? (
+              <form onSubmit={handleAvatarSubmit} className="mt-4 flex flex-col gap-2">
+                <input
+                  type="url"
+                  placeholder="Nhập URL ảnh đại diện..."
+                  value={avatarUrl}
+                  onChange={e => setAvatarUrl(e.target.value)}
+                  className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {loading ? <FaSpinner className="animate-spin inline mr-2" /> : null}
+                    Lưu ảnh
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingAvatar(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            ) : null}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -158,21 +170,6 @@ const Profile = () => {
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    MSSV
-                  </label>
-                  <input
-                    type="text"
-                    name="studentId"
-                    value={formData.studentId}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email
@@ -180,13 +177,11 @@ const Profile = () => {
                   <input
                     type="email"
                     name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    required
+                    value={user?.email}
+                    disabled
+                    className="w-full rounded-lg border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Số điện thoại
@@ -199,19 +194,6 @@ const Profile = () => {
                     className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Địa chỉ
-                </label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  rows="3"
-                  className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                />
               </div>
 
               <div className="pt-4">

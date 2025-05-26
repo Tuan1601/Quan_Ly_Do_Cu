@@ -159,10 +159,10 @@ const ChangePassword = () => {
                   </div>
                   <input
                     id="confirmNewPassword"
-                    name="confirmNewPassword"
+                    name="confirmPassword"
                     type={showConfirmNewPassword ? 'text' : 'password'}
                     required
-                    value={formData.confirmPassword}
+                    value={formData.confirmPassword || ''}
                     onChange={handleChange}
                     className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="Nhập lại mật khẩu mới"

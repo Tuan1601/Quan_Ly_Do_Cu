@@ -205,19 +205,19 @@ const RequestsList = () => {
           Quản lý yêu cầu mượn
         </h2>
         <div className="flex gap-2 items-center">
-          <select
+        <select
             className="border px-3 py-2 rounded min-w-[150px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="rejected">Từ chối</option>
-            <option value="borrowed">Đã mượn</option>
-            <option value="returned">Đã trả</option>
-            <option value="overdue">Quá hạn</option>
-          </select>
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="pending">Chờ duyệt</option>
+          <option value="approved">Đã duyệt</option>
+          <option value="rejected">Từ chối</option>
+          <option value="borrowed">Đã mượn</option>
+          <option value="returned">Đã trả</option>
+          <option value="overdue">Quá hạn</option>
+        </select>
           <button
             className="px-3 py-2 rounded border hover:bg-gray-100 flex items-center gap-1 transition-colors"
             onClick={() => setShowFilters(!showFilters)}
@@ -394,11 +394,11 @@ const RequestsList = () => {
                     <th scope="col" className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24 border-b">
                       Thao tác
                     </th>
-                  </tr>
-                </thead>
+              </tr>
+            </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedRequests.map((req) => (
-                    <tr key={req._id} className="hover:bg-gray-50">
+                <tr key={req._id} className="hover:bg-gray-50">
                       <td className="sticky left-0 z-10 bg-white px-4 py-3 group-hover:bg-gray-50">
                         <div className="text-sm font-medium text-gray-900">{req.user?.username || 'N/A'}</div>
                         <div className="text-xs text-gray-500">{req.user?.email}</div>
@@ -415,31 +415,31 @@ const RequestsList = () => {
                       </td>
                       <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                         {req.borrowDate ? new Date(req.borrowDate).toLocaleDateString() : 'N/A'}
-                      </td>
+                  </td>
                       <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                         {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
-                      </td>
+                  </td>
                       <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                         {req.actualReturnDate ? new Date(req.actualReturnDate).toLocaleDateString() : '-'}
-                      </td>
+                  </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${STATUS_COLORS[req.status]}`}>
-                          {STATUS_LABELS[req.status]}
-                        </span>
-                      </td>
+                      {STATUS_LABELS[req.status]}
+                    </span>
+                  </td>
                       <td className="sticky right-0 z-10 bg-white px-4 py-3 text-right group-hover:bg-gray-50">
-                        <button
-                          onClick={() => openDetail(req._id)}
+                    <button
+                      onClick={() => openDetail(req._id)}
                           className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors"
-                        >
-                          Chi tiết
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    >
+                      Chi tiết
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
           </div>
 
           {/* Pagination */}

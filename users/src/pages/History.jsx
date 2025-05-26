@@ -95,9 +95,7 @@ const History = () => {
     return new Intl.DateTimeFormat('vi-VN', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: '2-digit'
     }).format(date);
   };
 
@@ -262,7 +260,7 @@ const History = () => {
                       Ngày mượn
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                      Ngày trả
+                      Ngày trả dự kiến
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Thao tác
@@ -307,26 +305,16 @@ const History = () => {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap hidden lg:table-cell">
                         <div className="text-sm text-gray-900">
-                          {item.returnDate ? formatDate(item.returnDate) : '-'}
+                          {item.expectedReturnDate ? formatDate(item.expectedReturnDate) : '-'}
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => setSelectedItem(item)}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          className="text-blue-600 hover:text-blue-900"
                         >
                           Chi tiết
                         </button>
-                        {item.status === 'borrowed' && (
-                          <button
-                            onClick={() => {
-                              // Implement return logic here
-                            }}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Trả
-                          </button>
-                        )}
                       </td>
                     </tr>
                   ))}
@@ -435,12 +423,6 @@ const History = () => {
                     <p className="text-sm font-medium text-gray-500">Ngày trả (dự kiến)</p>
                     <p className="mt-1 text-sm text-gray-900">
                       {selectedItem.expectedReturnDate ? formatDate(selectedItem.expectedReturnDate) : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Ngày trả (thực tế)</p>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {selectedItem.returnDate ? formatDate(selectedItem.returnDate) : '-'}
                     </p>
                   </div>
                   <div>
