@@ -6,6 +6,7 @@ import AdminRoute from './components/AdminRoute';
 import TopHeader from './components/Header/TopHeader';
 import MainHeader from './components/Header/MainHeader';
 import AdminLayout from './layouts/AdminLayout';
+import { UserDataProvider } from './contexts/UserDataContext';
 
 // User Pages
 import Home from './pages/Home';
@@ -28,66 +29,68 @@ import AdminChangePassword from './pages/admin/AdminChangePassword';
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Navigate to="/admin" replace />} />
+      <UserDataProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Navigate to="/admin" replace />} />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-          <Route element={<PrivateRoute />}>
-            <Route path="/home" element={
-              <>
-                <TopHeader />
-                <MainHeader />
-                <main className="container mx-auto px-4 py-8">
-                  <Home />
-                </main>
-              </>
-            } />
-            <Route path="/notifications" element={
-              <>
-                <TopHeader />
-                <MainHeader />
-                <main className="container mx-auto px-4 py-8">
-                  <Notifications />
-                </main>
-              </>
-            } />
-            <Route path="/equipment" element={
-              <>
-                <TopHeader />
-                <MainHeader />
-                <main className="container mx-auto px-4 py-8">
-                  <Equipment />
-                </main>
-              </>
-            } />
-            <Route path="/my-requests" element={
-              <>
-                <TopHeader />
-                <MainHeader />
-                <main className="container mx-auto px-4 py-8">
-                  <MyRequests />
-                </main>
-              </>
-            } />
-          </Route>
-
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="requests" element={<RequestsList />} />
-              <Route path="equipment" element={<AdminEquipmentList />} />
-              <Route path="statistics" element={<AdminStatistics />} />
-              <Route path="alerts" element={<AdminAlerts />} />
-              <Route path="info" element={<AdminInfo />} />
-              <Route path="change-password" element={<AdminChangePassword />} />
+            <Route element={<PrivateRoute />}>
+              <Route path="/home" element={
+                <>
+                  <TopHeader />
+                  <MainHeader />
+                  <main className="container mx-auto px-4 py-8">
+                    <Home />
+                  </main>
+                </>
+              } />
+              <Route path="/notifications" element={
+                <>
+                  <TopHeader />
+                  <MainHeader />
+                  <main className="container mx-auto px-4 py-8">
+                    <Notifications />
+                  </main>
+                </>
+              } />
+              <Route path="/equipment" element={
+                <>
+                  <TopHeader />
+                  <MainHeader />
+                  <main className="container mx-auto px-4 py-8">
+                    <Equipment />
+                  </main>
+                </>
+              } />
+              <Route path="/my-requests" element={
+                <>
+                  <TopHeader />
+                  <MainHeader />
+                  <main className="container mx-auto px-4 py-8">
+                    <MyRequests />
+                  </main>
+                </>
+              } />
             </Route>
-          </Route>
-        </Routes>
-      </Router>
+
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="requests" element={<RequestsList />} />
+                <Route path="equipment" element={<AdminEquipmentList />} />
+                <Route path="statistics" element={<AdminStatistics />} />
+                <Route path="alerts" element={<AdminAlerts />} />
+                <Route path="info" element={<AdminInfo />} />
+                <Route path="change-password" element={<AdminChangePassword />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Router>
+      </UserDataProvider>
     </AuthProvider>
   );
 }

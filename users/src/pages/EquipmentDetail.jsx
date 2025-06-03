@@ -121,7 +121,6 @@ const EquipmentDetail = () => {
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="lg:flex">
-          {/* Image Section */}
           <div className="lg:w-1/2 relative">
             <div className="aspect-w-4 aspect-h-3">
               <img
@@ -130,7 +129,6 @@ const EquipmentDetail = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            {/* Status Badge */}
             <div className="absolute top-4 right-4">
               <span
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium ${getStatusInfo(equipment.status).className}`}
@@ -140,10 +138,8 @@ const EquipmentDetail = () => {
             </div>
           </div>
 
-          {/* Content Section */}
           <div className="lg:w-1/2 p-8">
             <div className="space-y-6">
-              {/* Header */}
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   {equipment.name}
@@ -151,7 +147,6 @@ const EquipmentDetail = () => {
                 <p className="text-sm text-gray-500">Mã thiết bị: {equipment.code}</p>
               </div>
 
-              {/* Description */}
               <div className="prose prose-sm max-w-none">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Mô tả chi tiết</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -159,7 +154,6 @@ const EquipmentDetail = () => {
                 </p>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-2 gap-6 py-6 border-y border-gray-100">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-50 rounded-lg">
@@ -181,7 +175,6 @@ const EquipmentDetail = () => {
                 </div>
               </div>
 
-              {/* Messages */}
               {success && (
                 <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-3 rounded-lg">
                   <FaCheckCircle className="flex-shrink-0" />
@@ -196,7 +189,6 @@ const EquipmentDetail = () => {
                 </div>
               )}
 
-              {/* Action Button */}
               <button
                 onClick={handleBorrow}
                 disabled={equipment.status !== 'available' || borrowing}

@@ -341,7 +341,8 @@ const RequestsList = () => {
         <>
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="scrollbar-custom overflow-x-auto">
-              <style jsx>{`
+              <style>
+                {`
                 .scrollbar-custom::-webkit-scrollbar {
                   height: 8px;
                 }
@@ -356,7 +357,8 @@ const RequestsList = () => {
                 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
                   background: #cdcdcd;
                 }
-              `}</style>
+                `}
+              </style>
               <table className="min-w-full divide-y divide-gray-200 border-collapse">
                 <thead className="bg-gray-50">
                   <tr>

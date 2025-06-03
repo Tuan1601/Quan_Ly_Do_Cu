@@ -30,19 +30,16 @@ const Register = () => {
     setError('');
     setSuccess('');
 
-    // Kiểm tra đồng ý điều khoản
     if (!formData.terms) {
       setError('Vui lòng đồng ý với điều khoản dịch vụ và chính sách bảo mật');
       return;
     }
 
-    // Kiểm tra mật khẩu khớp nhau
     if (formData.password !== formData.confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
       return;
     }
 
-    // Kiểm tra độ dài mật khẩu
     if (formData.password.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự');
       return;
@@ -74,7 +71,6 @@ const Register = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-violet-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
-        {/* Logo hoặc Brand */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">
             EquipMart
@@ -82,7 +78,6 @@ const Register = () => {
           <p className="mt-2 text-gray-600">Hệ thống quản lý thiết bị thông minh</p>
         </div>
 
-        {/* Form Container */}
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6 border border-gray-100">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">

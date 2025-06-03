@@ -77,7 +77,6 @@ const sliderStyles = `
   }
 `;
 
-// Thêm styles vào head
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = sliderStyles;
@@ -116,7 +115,6 @@ const Banner = () => (
           <div
             className="relative w-full h-[450px] md:h-[550px] flex items-center justify-center overflow-hidden"
           >
-            {/* Background Image Container */}
             <div 
               className="absolute inset-0 w-full h-full"
               style={{
@@ -128,7 +126,6 @@ const Banner = () => (
               }}
             />
             
-            {/* Gradient Overlay */}
             <div 
               className="absolute inset-0" 
               style={{
@@ -136,7 +133,6 @@ const Banner = () => (
               }}
             />
 
-            {/* Content */}
             <div className="relative z-10 container mx-auto px-4">
               <div className="max-w-2xl">
                 <span className="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-semibold mb-6 shadow-lg">
@@ -262,15 +258,12 @@ const Home = () => {
 
   return (
     <div>
-      {/* Banner ngoài container */}
       <Banner />
 
-      {/* Các phần còn lại trong container */}
       <div className="container mx-auto px-4">
         {/* Quick Actions */}
         <QuickActions />
 
-        {/* Block icon tiện ích */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 my-8">
           <div className="flex flex-col items-center">
             <FaShippingFast className="text-3xl text-blue-600 mb-2" />
@@ -294,7 +287,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Thiết bị nổi bật */}
         <div className="mb-12">
           <h3 className="text-2xl font-bold mb-6 text-blue-900">Thiết bị nổi bật</h3>
           <div className="relative -mx-4">
@@ -302,9 +294,7 @@ const Home = () => {
               {featured.map(item => (
                 <div key={item._id} className="px-4">
                   <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col group h-full">
-                    {/* Product Image Container */}
                     <div className="relative pt-[75%] overflow-hidden bg-gray-50">
-                      {/* Image */}
                       <img
                         src={item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
                         alt={item.name}
@@ -312,7 +302,6 @@ const Home = () => {
                       />
                     </div>
 
-                    {/* Product Info */}
                     <div className="p-5 flex flex-col flex-grow">
                       <div className="flex-grow">
                         <h4 className="font-bold text-lg mb-2 text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-1">
@@ -320,7 +309,6 @@ const Home = () => {
                         </h4>
                         <p className="text-gray-600 mb-4 text-sm line-clamp-2">{item.description}</p>
                         
-                        {/* Quantity Badge */}
                         <div className="flex items-center gap-2 mb-4">
                           <span className="text-sm">
                             Còn lại: <span className="font-medium text-blue-600">{item.availableQuantity}</span>
@@ -331,7 +319,6 @@ const Home = () => {
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
                       <div className="flex gap-3 pt-4 border-t border-gray-100">
                         <Link
                           to={`/equipment/${item._id}`}

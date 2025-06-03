@@ -9,7 +9,6 @@ const UserMenu = ({ user, onLogout }) => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // Xử lý click outside để đóng dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -29,7 +28,6 @@ const UserMenu = ({ user, onLogout }) => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* User button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 hover:text-blue-200 transition py-1 group"
@@ -50,17 +48,14 @@ const UserMenu = ({ user, onLogout }) => {
         <span className="hidden md:inline group-hover:text-blue-200">{user.username}</span>
       </button>
 
-      {/* Dropdown menu */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl py-2 z-50 border border-gray-100">
-          {/* User info header */}
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
             <p className="text-sm font-semibold text-gray-900">{user.username}</p>
             <p className="text-xs text-gray-500 truncate">{user.email}</p>
             <p className="text-xs text-gray-500">{user.phoneNumber}</p>
           </div>
 
-          {/* Menu items */}
           <div className="py-2">
             <Link
               to="/profile"
@@ -114,7 +109,6 @@ const TopHeader = () => {
     <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm py-2.5">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-2">
-          {/* Contact info */}
           <div className="hidden md:flex items-center gap-6">
             <a href="tel:0123456789" className="flex items-center gap-2 hover:text-blue-200 transition">
               <FaPhoneAlt className="text-blue-300" /> 0123.456.789
@@ -127,7 +121,6 @@ const TopHeader = () => {
             </span>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="md:hidden text-white hover:text-blue-200 transition"
@@ -135,7 +128,6 @@ const TopHeader = () => {
             <FaEllipsisV />
           </button>
 
-          {/* Mobile Menu */}
           {showMobileMenu && (
             <div className="md:hidden w-full space-y-2 mt-2 border-t border-blue-500 pt-2">
               <a href="tel:0123456789" className="flex items-center gap-2 hover:text-blue-200 transition py-2">
@@ -150,11 +142,9 @@ const TopHeader = () => {
             </div>
           )}
 
-          {/* User section */}
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-4">
-                {/* Notifications */}
                 <Link
                   to="/notifications"
                   className="p-2 hover:text-blue-200 transition relative group"
@@ -167,7 +157,6 @@ const TopHeader = () => {
                   )}
                 </Link>
 
-                {/* User menu */}
                 <UserMenu user={user} onLogout={logout} />
               </div>
             ) : (

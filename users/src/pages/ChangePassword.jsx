@@ -28,7 +28,6 @@ const ChangePassword = () => {
     setError('');
     setSuccess('');
 
-    // Validate passwords
     if (formData.newPassword !== formData.confirmPassword) {
       setError('Mật khẩu mới không khớp');
       return;

@@ -6,7 +6,6 @@ const Footer = () => {
     <footer className="bg-gray-900 text-gray-300">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
-          {/* About */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4 text-white">Về chúng tôi</h3>
             <div className="flex items-center gap-2 mb-4">
@@ -21,7 +20,6 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Contact */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4 text-white">Liên hệ</h3>
             <ul className="space-y-3">
@@ -42,7 +40,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Social & Links */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-4 text-white">Kết nối</h3>
             <div className="flex gap-4">
@@ -69,7 +66,6 @@ const Footer = () => {
               </a>
             </div>
 
-            {/* Quick Links */}
             <div className="mt-6 pt-6 border-t border-gray-800">
               <h4 className="text-sm font-semibold mb-4 text-white">Liên kết nhanh</h4>
               <ul className="grid grid-cols-2 gap-2 text-sm">
@@ -90,7 +86,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-center md:text-left">

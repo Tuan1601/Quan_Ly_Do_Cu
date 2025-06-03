@@ -73,7 +73,6 @@ const Equipment = () => {
     }
   };
 
-  // Filter and sort equipment
   const filteredEquipment = equipment
     .filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -89,7 +88,6 @@ const Equipment = () => {
       return order * (a.availableQuantity - b.availableQuantity);
     });
 
-  // Pagination logic
   const totalPages = Math.ceil(filteredEquipment.length / itemsPerPage);
   const paginatedEquipment = filteredEquipment.slice(
     (currentPage - 1) * itemsPerPage,
@@ -102,7 +100,6 @@ const Equipment = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Danh sách thiết bị</h1>
           
-          {/* Search and Filter Controls */}
           <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
             <div className="relative flex-grow sm:max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -130,7 +127,6 @@ const Equipment = () => {
           </div>
         </div>
 
-        {/* Advanced Filters */}
         {showFilters && (
           <div className="bg-white p-4 rounded-lg shadow-md">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -199,7 +195,6 @@ const Equipment = () => {
                 key={item._id}
                 className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col group"
               >
-                {/* Product Image Container */}
                 <div className="relative pt-[75%] overflow-hidden bg-gray-50">
                   <img
                     src={item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
@@ -208,7 +203,6 @@ const Equipment = () => {
                   />
                 </div>
 
-                {/* Product Info */}
                 <div className="p-4 sm:p-5 flex flex-col flex-grow">
                   <div className="flex-grow">
                     <div className="flex justify-between items-start gap-2 mb-2">
@@ -223,7 +217,6 @@ const Equipment = () => {
                     
                     <p className="text-gray-600 mb-4 text-sm line-clamp-2">{item.description}</p>
                     
-                    {/* Quantity Badge */}
                     <div className="flex items-center gap-2 mb-4">
                       <span className="text-sm">
                         Còn lại: <span className="font-medium text-blue-600">{item.availableQuantity}</span>
@@ -234,7 +227,6 @@ const Equipment = () => {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-3 pt-4 border-t border-gray-100">
                     <Link
                       to={`/equipment/${item._id}`}
@@ -264,7 +256,6 @@ const Equipment = () => {
             ))}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex flex-wrap justify-center items-center gap-2 mt-8">
               <button

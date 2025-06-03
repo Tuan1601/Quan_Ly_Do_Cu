@@ -100,7 +100,6 @@ const Borrow = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-6 sm:mb-8">
           <button
             onClick={() => navigate(-1)}
@@ -113,7 +112,6 @@ const Borrow = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Equipment Info Card */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="aspect-w-3 aspect-h-2">
@@ -145,7 +143,7 @@ const Borrow = () => {
             </div>
           </div>
 
-          {/* Borrow Form */}
+         
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
               {(error || success) && (

@@ -205,7 +205,8 @@ const Dashboard = () => {
             </h3>
           </div>
           <div className="overflow-x-auto scrollbar-custom">
-            <style jsx>{`
+            <style>
+              {`
               .scrollbar-custom::-webkit-scrollbar {
                 height: 8px;
               }
@@ -220,7 +221,8 @@ const Dashboard = () => {
               .scrollbar-custom::-webkit-scrollbar-thumb:hover {
                 background: #cdcdcd;
               }
-            `}</style>
+              `}
+            </style>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -291,6 +293,24 @@ const Dashboard = () => {
             </h3>
           </div>
           <div className="overflow-x-auto scrollbar-custom">
+            <style>
+              {`
+              .scrollbar-custom::-webkit-scrollbar {
+                height: 8px;
+              }
+              .scrollbar-custom::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+              }
+              .scrollbar-custom::-webkit-scrollbar-thumb {
+                background: #ddd;
+                border-radius: 4px;
+              }
+              .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+                background: #cdcdcd;
+              }
+              `}
+            </style>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>

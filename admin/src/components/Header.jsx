@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import * as userApi from '../api/userApi';
+import { useUserData } from '../contexts/UserDataContext';
 
 const Header = () => {
   const { currentUser, token, logout } = useAuth();
+  const { userData, updateUserData, lastUpdate } = useUserData();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -23,12 +24,12 @@ const Header = () => {
       if (token) {
         const res = await userApi.getMe(token);
         if (res.success) {
-          setUserData(res.data);
+          updateUserData(res.data);
         }
       }
     };
     fetchUserData();
-  }, [token]);
+  }, [token, lastUpdate, updateUserData]);
 
   const handleLogout = async () => {
     try {

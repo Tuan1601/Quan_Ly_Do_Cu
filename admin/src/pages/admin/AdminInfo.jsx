@@ -3,10 +3,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import * as userApi from '../../api/userApi';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaCamera, FaEnvelope, FaPhone, FaSpinner, FaKey } from 'react-icons/fa';
+import { useUserData } from '../../contexts/UserDataContext';
 
 const AdminInfo = () => {
   const { token } = useAuth();
-  const [admin, setAdmin] = useState(null);
+  const { userData: admin, updateUserData } = useUserData();
   const [form, setForm] = useState({ username: '', phoneNumber: '' });
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
@@ -22,7 +23,7 @@ const AdminInfo = () => {
       setLoading(true);
       const res = await userApi.getMe(token);
       if (res.success) {
-        setAdmin(res.data);
+        updateUserData(res.data);
         setForm({
           username: res.data.username || '',
           phoneNumber: res.data.phoneNumber || '',
@@ -52,7 +53,7 @@ const AdminInfo = () => {
     }, token);
     if (res.success) {
       setSuccess('Cập nhật thông tin thành công!');
-      setAdmin(res.data);
+      updateUserData(res.data);
     } else {
       setError(res.error || 'Cập nhật thất bại.');
     }
@@ -71,7 +72,7 @@ const AdminInfo = () => {
     const res = await userApi.updateProfile({ avatarUrl }, token);
     if (res.success) {
       setSuccess('Cập nhật ảnh đại diện thành công!');
-      setAdmin(res.data);
+      updateUserData(res.data);
       setIsEditingAvatar(false);
     } else {
       setError(res.error || 'Cập nhật ảnh đại diện thất bại.');

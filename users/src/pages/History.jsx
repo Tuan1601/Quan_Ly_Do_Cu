@@ -12,7 +12,6 @@ const History = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -132,14 +131,12 @@ const History = () => {
       return direction * (a[sortConfig.field] > b[sortConfig.field] ? 1 : -1);
     });
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredAndSortedHistory.length / itemsPerPage);
   const paginatedHistory = filteredAndSortedHistory.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Reset to first page when filter or search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filter, searchTerm]);
@@ -150,7 +147,6 @@ const History = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Lịch sử mượn trả</h1>
           
-          {/* Search and Filter Controls */}
           <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
             <div className="relative flex-grow sm:max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -178,7 +174,6 @@ const History = () => {
           </div>
         </div>
 
-        {/* Advanced Filters */}
         {showFilters && (
           <div className="bg-white p-4 rounded-lg shadow-md">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -340,7 +335,6 @@ const History = () => {
             </div>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex flex-wrap justify-center items-center gap-2 mt-8">
               <button
@@ -388,7 +382,6 @@ const History = () => {
         </>
       )}
 
-      {/* Details Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">

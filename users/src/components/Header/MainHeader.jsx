@@ -24,7 +24,6 @@ const MainHeader = () => {
     { path: '/history', icon: <FaHistory />, text: 'Lịch sử mượn' },
   ];
 
-  // Handle click outside search results and mobile menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -37,12 +36,10 @@ const MainHeader = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setShowMobileMenu(false);
   }, [location.pathname]);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (showMobileMenu) {
       document.body.style.overflow = 'hidden';
@@ -54,7 +51,6 @@ const MainHeader = () => {
     };
   }, [showMobileMenu]);
 
-  // Debounced search
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.trim()) {
@@ -96,7 +92,6 @@ const MainHeader = () => {
     <nav className="bg-white">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <span className="text-xl md:text-2xl font-bold">
               <span className="text-gray-800">Equip</span>
@@ -104,7 +99,6 @@ const MainHeader = () => {
             </span>
           </Link>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {menuItems.map((item) => (
               <Link
@@ -122,9 +116,7 @@ const MainHeader = () => {
             ))}
           </div>
 
-          {/* Search and Mobile Menu Button */}
           <div className="flex items-center gap-4">
-            {/* Search */}
             <div className="relative flex items-center" ref={searchRef}>
               <div className={`${showSearch ? 'w-full md:w-96' : 'w-auto'} transition-all duration-300`}>
                 <form onSubmit={handleSearch} className="relative flex items-center">
@@ -164,7 +156,6 @@ const MainHeader = () => {
                   )}
                 </form>
 
-                {/* Search Results Dropdown */}
                 {showSearch && (searchResults.length > 0 || loading) && (
                   <div className="absolute right-0 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-[480px] overflow-y-auto z-50">
                     {loading ? (
@@ -180,7 +171,6 @@ const MainHeader = () => {
                             onClick={() => handleResultClick(item._id)}
                             className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3"
                           >
-                            {/* Equipment Image */}
                             <div className="w-16 h-16 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
                               <img
                                 src={item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
@@ -188,7 +178,6 @@ const MainHeader = () => {
                                 className="w-full h-full object-contain p-2"
                               />
                             </div>
-                            {/* Equipment Info */}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-gray-800 truncate">
                                 {item.name}
@@ -196,7 +185,6 @@ const MainHeader = () => {
                               <div className="text-sm text-gray-500 truncate mt-1">
                                 {item.description}
                               </div>
-                              {/* Quantity and Status */}
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="text-sm text-gray-600">
                                   Còn lại: <span className="font-medium text-blue-600">{item.availableQuantity}</span>
@@ -218,7 +206,6 @@ const MainHeader = () => {
                             </div>
                           </div>
                         ))}
-                        {/* View All Results Button */}
                         <button
                           onClick={handleSearch}
                           className="w-full p-3 text-center text-blue-600 hover:bg-blue-50 font-medium border-t border-gray-100"
@@ -232,7 +219,6 @@ const MainHeader = () => {
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="md:hidden p-2 text-gray-600 hover:text-blue-600 transition-colors rounded-lg hover:bg-gray-100"
@@ -243,7 +229,6 @@ const MainHeader = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <div
         className={`fixed inset-0 bg-gray-800 bg-opacity-50 z-40 transition-opacity duration-300 md:hidden ${
           showMobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'
