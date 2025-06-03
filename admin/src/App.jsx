@@ -22,21 +22,20 @@ import RequestsList from './pages/admin/RequestsList';
 import AdminEquipmentList from './pages/admin/EquipmentList';
 import AdminStatistics from './pages/admin/Statistics';
 import AdminAlerts from './pages/admin/Alerts';
+import AdminInfo from './pages/admin/AdminInfo';
+import AdminChangePassword from './pages/admin/AdminChangePassword';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Redirect from root to admin */}
           <Route path="/" element={<Navigate to="/admin" replace />} />
 
-          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Protected Student Routes */}
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={
               <>
@@ -76,7 +75,6 @@ function App() {
             } />
           </Route>
 
-          {/* Protected Admin Routes */}
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
@@ -84,6 +82,8 @@ function App() {
               <Route path="equipment" element={<AdminEquipmentList />} />
               <Route path="statistics" element={<AdminStatistics />} />
               <Route path="alerts" element={<AdminAlerts />} />
+              <Route path="info" element={<AdminInfo />} />
+              <Route path="change-password" element={<AdminChangePassword />} />
             </Route>
           </Route>
         </Routes>

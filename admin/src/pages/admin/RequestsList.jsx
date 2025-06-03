@@ -32,11 +32,7 @@ const RequestsList = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Advanced filters
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
@@ -64,7 +60,6 @@ const RequestsList = () => {
     if (token) fetchRequests();
   }, [token, filter]);
 
-  // Filter requests
   const filteredRequests = requests.filter(req => {
     if (!req) return false;
 
@@ -97,7 +92,6 @@ const RequestsList = () => {
            matchMinQuantity && matchMaxQuantity && matchEquipment && matchUser;
   });
 
-  // Pagination logic
   const totalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
   const paginatedRequests = filteredRequests.slice(
     (currentPage - 1) * PAGE_SIZE,
@@ -115,7 +109,7 @@ const RequestsList = () => {
       ...prev,
       [name]: value
     }));
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -230,7 +224,6 @@ const RequestsList = () => {
         </div>
       </div>
 
-      {/* Advanced Filters */}
       {showFilters && (
         <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200 shadow-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -442,7 +435,6 @@ const RequestsList = () => {
         </div>
           </div>
 
-          {/* Pagination */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
             <div className="text-sm text-gray-700 whitespace-nowrap">
               Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} đến {Math.min(currentPage * PAGE_SIZE, filteredRequests.length)} trong số {filteredRequests.length} yêu cầu
@@ -486,7 +478,6 @@ const RequestsList = () => {
         </>
       )}
 
-      {/* Modal chi tiết yêu cầu */}
       {detail && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
@@ -513,9 +504,10 @@ const RequestsList = () => {
             </div>
 
             <div className="space-y-2 mb-4">
-              <div><b>Ngày mượn:</b> {detail.borrowDate ? new Date(detail.borrowDate).toLocaleString() : ''}</div>
-              <div><b>Ngày trả:</b> {detail.returnDate ? new Date(detail.returnDate).toLocaleString() : ''}</div>
-              <div><b>Lý do mượn:</b> {detail.reason}</div>
+              <div><b>Ngày mượn:</b> {detail.borrowDate ? new Date(detail.borrowDate).toLocaleDateString() : ''}</div>
+              <div><b>Ngày trả dự kiến:</b> {detail.expectedReturnDate ? new Date(detail.expectedReturnDate).toLocaleDateString() : '-'}</div>
+              <div><b>Ngày trả thực tế:</b> {detail.actualReturnDate ? new Date(detail.actualReturnDate).toLocaleDateString() : '-'}</div>
+              <div><b>Lý do mượn:</b> {detail.notes}</div>
               <div>
                 <b>Trạng thái:</b>
                 <span className={`ml-2 px-2 py-1 rounded text-sm ${STATUS_COLORS[detail.status]}`}>
@@ -587,7 +579,6 @@ const RequestsList = () => {
         </div>
       )}
 
-      {/* Modal xác nhận */}
       {confirmAction && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">

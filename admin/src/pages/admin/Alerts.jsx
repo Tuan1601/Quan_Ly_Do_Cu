@@ -11,15 +11,15 @@ const Alerts = () => {
   const fetchAlerts = async () => {
     setLoading(true);
     try {
-      // Lấy tất cả yêu cầu mượn
+     
       const requests = await borrowApi.getAllBorrowRequests(token);
       
-      // Lọc các yêu cầu đang mượn và có ngày trả
+      
       const activeRequests = requests.filter(req => 
         req.status === 'borrowed' && req.returnDate
       );
 
-      // Tính toán thời gian còn lại và sắp xếp theo thời gian
+      
       const alertRequests = activeRequests.map(req => {
         const returnDate = new Date(req.returnDate);
         const now = new Date();
@@ -28,8 +28,8 @@ const Alerts = () => {
           ...req,
           daysLeft
         };
-      }).filter(req => req.daysLeft <= 1) // Lọc các yêu cầu còn dưới 1 ngày
-        .sort((a, b) => a.daysLeft - b.daysLeft); // Sắp xếp tăng dần theo thời gian còn lại
+      }).filter(req => req.daysLeft <= 1) 
+        .sort((a, b) => a.daysLeft - b.daysLeft); 
 
       setData(alertRequests);
       setError('');
@@ -44,7 +44,7 @@ const Alerts = () => {
     if (token) fetchAlerts();
   }, [token]);
 
-  // Format thời gian còn lại
+ 
   const formatTimeLeft = (daysLeft) => {
     if (daysLeft < 0) {
       const overdueDays = Math.abs(Math.floor(daysLeft));
@@ -59,11 +59,11 @@ const Alerts = () => {
     return `Còn ${hoursLeft} giờ`;
   };
 
-  // Lấy style cho trạng thái
+  
   const getStatusStyle = (daysLeft) => {
-    if (daysLeft < 0) return 'bg-red-100 text-red-800'; // Quá hạn
-    if (daysLeft < 0.5) return 'bg-orange-100 text-orange-800'; // Còn dưới 12 giờ
-    return 'bg-yellow-100 text-yellow-800'; // Còn dưới 1 ngày
+    if (daysLeft < 0) return 'bg-red-100 text-red-800'; 
+    if (daysLeft < 0.5) return 'bg-orange-100 text-orange-800'; 
+    return 'bg-yellow-100 text-yellow-800'; 
   };
 
   return (

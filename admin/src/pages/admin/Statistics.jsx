@@ -20,17 +20,14 @@ const Statistics = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      // Lấy tất cả yêu cầu mượn
       const requests = await borrowApi.getAllBorrowRequests(token);
       console.log('Raw requests:', requests);
 
-      // Lọc theo tháng/năm và đếm số lượt mượn cho mỗi thiết bị
       const filteredRequests = requests.filter(req => {
         const borrowDate = new Date(req.borrowDate);
         return borrowDate.getMonth() + 1 === month && borrowDate.getFullYear() === year;
       });
 
-      // Tạo map để đếm số lượt mượn
       const equipmentStats = {};
       filteredRequests.forEach(req => {
         if (req.equipment) {
@@ -45,7 +42,6 @@ const Statistics = () => {
         }
       });
 
-      // Chuyển đổi map thành array và sắp xếp theo số lượt mượn
       const formattedStats = Object.values(equipmentStats)
         .sort((a, b) => b.borrowCount - a.borrowCount);
 
@@ -67,7 +63,6 @@ const Statistics = () => {
     }
   }, [token, month, year]);
 
-  // Lọc dữ liệu theo filter nâng cao
   const filteredData = data.filter(item => {
     if (!item) return false;
     const matchName = !search || (item.name && item.name.toLowerCase().includes(search.toLowerCase()));
@@ -84,7 +79,6 @@ const Statistics = () => {
 
   return (
     <div className="p-4 max-w-[2000px] mx-auto">
-      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 md:h-7 w-6 md:w-7 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
@@ -100,7 +94,7 @@ const Statistics = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            {showAdvancedFilters ? 'Ẩn bộ lọc' : 'Lọc nâng cao'}
+            {showAdvancedFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
           </button>
           <button 
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
@@ -114,7 +108,6 @@ const Statistics = () => {
         </div>
       </div>
 
-      {/* Filter Section */}
       <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-4">
@@ -203,7 +196,6 @@ const Statistics = () => {
         )}
       </div>
 
-      {/* Error message */}
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg mb-6">
           <div className="flex">
@@ -219,7 +211,6 @@ const Statistics = () => {
         </div>
       )}
 
-      {/* Loading state */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
@@ -227,7 +218,6 @@ const Statistics = () => {
         </div>
       ) : (
         <>
-          {/* Chart Section */}
           {filteredData.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -283,7 +273,6 @@ const Statistics = () => {
             </div>
           )}
 
-          {/* Table Section */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">

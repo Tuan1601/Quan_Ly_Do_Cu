@@ -11,7 +11,7 @@ const Sidebar = () => {
   const [pendingRequests, setPendingRequests] = useState(0);
   const [alertsCount, setAlertsCount] = useState(0);
 
-  // Handle window resize
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -22,7 +22,7 @@ const Sidebar = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch counts
+
   useEffect(() => {
     const fetchCounts = async () => {
       try {
@@ -60,7 +60,7 @@ const Sidebar = () => {
   const menuItems = [
     {
       path: '/admin',
-      name: 'Dashboard',
+      name: 'Trang chủ',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -116,12 +116,12 @@ const Sidebar = () => {
     setIsMobileOpen(!isMobileOpen);
   };
 
-  // Combine collapsed state with mobile open state
+
   const effectivelyOpen = !isCollapsed || isMobileOpen;
 
   return (
     <>
-      {/* Mobile Menu Button - Visible only on mobile */}
+
       <button
         onClick={toggleMobileMenu}
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
@@ -132,7 +132,7 @@ const Sidebar = () => {
         </svg>
       </button>
 
-      {/* Sidebar */}
+
       <aside 
         className={`fixed md:relative inset-y-0 left-0 z-40 transform ${
           effectivelyOpen ? 'translate-x-0' : '-translate-x-full'
@@ -140,7 +140,7 @@ const Sidebar = () => {
           isCollapsed ? 'w-20' : 'w-64'
         } bg-gray-800 text-white min-h-screen`}
       >
-        {/* Toggle Button - Hidden on mobile */}
+
         <button
           onClick={toggleSidebar}
           className="hidden md:block absolute -right-3 top-10 bg-indigo-600 rounded-full p-1 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -157,7 +157,7 @@ const Sidebar = () => {
           </svg>
         </button>
 
-        {/* Header */}
+
         <div className={`p-4 border-b border-gray-700 ${isCollapsed ? 'text-center' : ''}`}>
           <div className="flex items-center space-x-2">
             <svg className="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,7 +167,7 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Navigation */}
+
         <nav className="mt-4">
           <ul className="space-y-1">
             {menuItems.map((item) => (
@@ -196,7 +196,7 @@ const Sidebar = () => {
           </ul>
         </nav>
 
-        {/* Footer */}
+
         <div className={`absolute bottom-0 w-full p-4 border-t border-gray-700 ${
           isCollapsed ? 'text-center' : ''
         }`}>
@@ -209,7 +209,7 @@ const Sidebar = () => {
         </div>
       </aside>
 
-      {/* Overlay for mobile */}
+
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"

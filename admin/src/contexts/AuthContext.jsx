@@ -10,24 +10,25 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [loading, setLoading] = useState(true);
 
-  // Đăng nhập
+
   const login = async (email, password) => {
     try {
       const res = await userApi.login(email, password);
-      // API trả về trực tiếp object chứa user info và token
-      const userData = res; // Không cần .data vì response trả về trực tiếp
+    
+      const userData = res; 
       setToken(userData.token);
       setCurrentUser({
         _id: userData._id,
         username: userData.username,
         email: userData.email,
-        role: userData.role
+        role: userData.role,
+        avatarUrl: userData.avatarUrl
       });
       localStorage.setItem('token', userData.token);
-      console.log('Login success:', userData); // Debug log
+      console.log('Login success:', userData); 
       return userData;
     } catch (error) {
-      console.log('Login error:', error); // Debug log
+      console.log('Login error:', error); 
       setCurrentUser(null);
       setToken('');
       localStorage.removeItem('token');
@@ -35,7 +36,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Đăng ký
+ 
   const register = async (userData) => {
     try {
       const data = await userApi.register(userData);
@@ -45,20 +46,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Đăng xuất
+ 
   const logout = () => {
     setCurrentUser(null);
     setToken('');
     localStorage.removeItem('token');
   };
 
-  // Chỉ gọi /me khi reload page và có token
+  
   useEffect(() => {
     const fetchMe = async () => {
       if (token && !currentUser) {
         try {
           const { user } = await userApi.getMe(token);
-          setCurrentUser(user);
+          setCurrentUser({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            avatarUrl: user.avatarUrl
+          });
         } catch {
           setCurrentUser(null);
           setToken('');

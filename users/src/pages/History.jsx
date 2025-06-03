@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaSpinner, FaSearch, FaFilter, FaCalendar, FaSortAmountDown, FaEye, FaCheckCircle, FaTimesCircle, FaHistory, FaClock, FaImage, FaTimes } from 'react-icons/fa';
+import { FaSpinner, FaSearch, FaFilter, FaCalendar, FaSortAmountDown, FaEye, FaCheckCircle, FaTimesCircle, FaHistory, FaClock, FaImage, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { getBorrowingHistory } from '../api/borrowingApi';
 
 const History = () => {
@@ -23,7 +23,17 @@ const History = () => {
   const fetchHistory = async () => {
     try {
       const response = await getBorrowingHistory();
-      setHistory(response.data);
+      const processedHistory = response.data.map(item => {
+        if (item.status === 'borrowed' && item.expectedReturnDate) {
+          const expectedDate = new Date(item.expectedReturnDate);
+          const now = new Date();
+          if (expectedDate < now) {
+            return { ...item, status: 'overdue' };
+          }
+        }
+        return item;
+      });
+      setHistory(processedHistory);
     } catch (error) {
       setError('Không thể tải lịch sử mượn trả');
     } finally {
@@ -43,6 +53,8 @@ const History = () => {
         return 'text-blue-600 bg-blue-100 border-blue-200';
       case 'borrowed':
         return 'text-violet-600 bg-violet-100 border-violet-200';
+      case 'overdue':
+        return 'text-orange-600 bg-orange-100 border-orange-200';
       default:
         return 'text-gray-600 bg-gray-100 border-gray-200';
     }
@@ -60,6 +72,8 @@ const History = () => {
         return <FaHistory className="mr-1" />;
       case 'borrowed':
         return <FaCheckCircle className="mr-1" />;
+      case 'overdue':
+        return <FaExclamationTriangle className="mr-1" />;
       default:
         return null;
     }
@@ -77,6 +91,8 @@ const History = () => {
         return 'Đã trả';
       case 'borrowed':
         return 'Đang mượn';
+      case 'overdue':
+        return 'Quá hạn';
       default:
         return status;
     }
@@ -179,6 +195,7 @@ const History = () => {
                   <option value="borrowed">Đang mượn</option>
                   <option value="returned">Đã trả</option>
                   <option value="rejected">Từ chối</option>
+                  <option value="overdue">Quá hạn</option>
                 </select>
               </div>
               

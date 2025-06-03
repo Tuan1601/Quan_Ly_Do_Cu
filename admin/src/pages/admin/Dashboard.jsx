@@ -11,7 +11,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fetch all data
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
@@ -30,14 +29,12 @@ const Dashboard = () => {
     if (token) fetchAll();
   }, [token]);
 
-  // Tổng số liệu
   const totalEquipment = equipment.length;
   const totalRequests = requests.length;
   const pendingRequests = requests.filter(r => r.status === 'pending').length;
   const borrowedCount = requests.filter(r => r.status === 'borrowed').length;
   const overdueCount = requests.filter(r => r.status === 'overdue').length;
 
-  // Thiết bị tồn kho thấp (availableQuantity <= 2)
   const lowStock = equipment
     .filter(e => {
       if (e.availableQuantity === undefined) return false;
@@ -46,12 +43,10 @@ const Dashboard = () => {
     .sort((a, b) => a.availableQuantity - b.availableQuantity)
     .slice(0, 5);
 
-  // Yêu cầu mới nhất
   const latestRequests = [...requests]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
-  // Thống kê mượn nhiều trong tháng
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   
@@ -77,7 +72,7 @@ const Dashboard = () => {
 
   const monthlyStats = Object.values(stats)
     .sort((a, b) => b.borrowCount - a.borrowCount)
-    .slice(0, 5); // Chỉ lấy top 5
+    .slice(0, 5);
 
   if (loading) return (
     <div className="p-4 text-center">
@@ -113,7 +108,6 @@ const Dashboard = () => {
         Tổng quan hệ thống
       </h2>
       
-      {/* Cards tổng quan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow">
           <div className="text-gray-500 text-sm font-medium">Tổng thiết bị</div>
@@ -137,7 +131,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Biểu đồ thống kê */}
       <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -200,9 +193,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Danh sách yêu cầu và cảnh báo */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Yêu cầu mới nhất */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h3 className="font-semibold text-gray-900 flex items-center">
@@ -261,6 +252,7 @@ const Dashboard = () => {
                           req.status === 'approved' ? 'bg-green-100 text-green-800' :
                           req.status === 'borrowed' ? 'bg-blue-100 text-blue-800' :
                           req.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                          req.status === 'returned' ? 'bg-orange-100 text-orange-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
                           {req.status === 'pending' ? 'Chờ duyệt' :
@@ -268,6 +260,7 @@ const Dashboard = () => {
                            req.status === 'borrowed' ? 'Đang mượn' :
                            req.status === 'overdue' ? 'Quá hạn' :
                            req.status === 'returned' ? 'Đã trả' :
+                           req.status === 'rejected' ? 'Từ chối' :
                            req.status}
                         </span>
                       </td>
@@ -288,7 +281,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Thiết bị tồn kho thấp */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h3 className="font-semibold text-gray-900 flex items-center">
@@ -355,4 +347,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

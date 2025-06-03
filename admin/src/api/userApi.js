@@ -42,3 +42,25 @@ export const getMe = async (token) => {
     };
   }
 };
+
+export const updateProfile = async (profileData, token) => {
+  try {
+    const res = await axios.put(
+      'https://second-hand-club.onrender.com/api/users/profile',
+      profileData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+      status: error.response?.status,
+    };
+  }
+};

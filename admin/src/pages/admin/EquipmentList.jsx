@@ -32,7 +32,6 @@ const EquipmentList = () => {
     toDate: ''
   });
 
-  // Fetch equipment list
   const fetchEquipment = async () => {
     setLoading(true);
     try {
@@ -48,7 +47,6 @@ const EquipmentList = () => {
     fetchEquipment();
   }, []);
 
-  // Handle open modal for add/edit
   const openModal = (item = null) => {
     setEditItem(item);
     setForm(item ? {
@@ -61,7 +59,6 @@ const EquipmentList = () => {
     setShowModal(true);
   };
 
-  // Handle close modal
   const closeModal = () => {
     setShowModal(false);
     setEditItem(null);
@@ -69,12 +66,10 @@ const EquipmentList = () => {
     setError('');
   };
 
-  // Handle form change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Handle add/edit submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -90,7 +85,6 @@ const EquipmentList = () => {
     }
   };
 
-  // Handle delete
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc muốn xóa thiết bị này?')) return;
     try {
@@ -101,13 +95,11 @@ const EquipmentList = () => {
     }
   };
 
-  // Handle show detail
   const handleShowDetail = (item) => {
     setDetailItem(item);
   };
   const closeDetail = () => setDetailItem(null);
 
-  // Search & Pagination
   const filteredEquipment = equipment.filter(
     (item) => {
       const matchSearch = !search || 
@@ -140,7 +132,7 @@ const EquipmentList = () => {
   };
 
   useEffect(() => {
-    setCurrentPage(1); // Reset page when search changes
+    setCurrentPage(1);
   }, [search]);
 
   const handleFilterChange = (e) => {
@@ -149,7 +141,7 @@ const EquipmentList = () => {
       ...prev,
       [name]: value
     }));
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -168,7 +160,6 @@ const EquipmentList = () => {
 
   return (
     <div className="p-4 max-w-[2000px] mx-auto">
-      {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
         <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 md:h-7 w-6 md:w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -196,7 +187,7 @@ const EquipmentList = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            {showAdvancedFilters ? 'Ẩn bộ lọc' : 'Lọc nâng cao'}
+            {showAdvancedFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
           </button>
           <button
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 sm:flex-none"
@@ -210,7 +201,6 @@ const EquipmentList = () => {
         </div>
       </div>
 
-      {/* Advanced Filters */}
       {showAdvancedFilters && (
         <div className="bg-white p-4 rounded-lg shadow-lg mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -305,7 +295,6 @@ const EquipmentList = () => {
         </div>
       )}
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded mb-4">
           <div className="flex">
@@ -321,7 +310,6 @@ const EquipmentList = () => {
         </div>
       )}
 
-      {/* Loading State */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
@@ -329,7 +317,6 @@ const EquipmentList = () => {
         </div>
       ) : (
         <>
-          {/* Table Section */}
           <div className="bg-white rounded-lg shadow-lg">
             <div className="scrollbar-custom overflow-x-auto">
               <style jsx>{`
@@ -446,7 +433,6 @@ const EquipmentList = () => {
             </div>
           </div>
 
-          {/* Pagination */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
             <div className="text-sm text-gray-700 whitespace-nowrap">
               Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} đến {Math.min(currentPage * PAGE_SIZE, filteredEquipment.length)} trong số {filteredEquipment.length} thiết bị
@@ -490,7 +476,6 @@ const EquipmentList = () => {
         </>
       )}
 
-      {/* Modal thêm/sửa thiết bị */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
@@ -590,7 +575,6 @@ const EquipmentList = () => {
           </div>
         </div>
       )}
-      {/* Modal chi tiết thiết bị */}
       {detailItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
