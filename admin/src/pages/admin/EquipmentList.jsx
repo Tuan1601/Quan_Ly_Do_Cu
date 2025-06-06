@@ -15,6 +15,7 @@ const EquipmentList = () => {
     name: '',
     description: '',
     totalQuantity: 1,
+    availableQuantity: 1,
     status: 'available',
     imageUrl: ''
   });
@@ -53,30 +54,85 @@ const EquipmentList = () => {
       name: item.name,
       description: item.description,
       totalQuantity: item.totalQuantity,
+      availableQuantity: item.availableQuantity,
       status: item.status,
       imageUrl: item.imageUrl
-    } : { name: '', description: '', totalQuantity: 1, status: 'available', imageUrl: '' });
+    } : { 
+      name: '', 
+      description: '', 
+      totalQuantity: 1, 
+      availableQuantity: 1,
+      status: 'available', 
+      imageUrl: '' 
+    });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditItem(null);
-    setForm({ name: '', description: '', totalQuantity: 1, status: 'available', imageUrl: '' });
+    setForm({ 
+      name: '', 
+      description: '', 
+      totalQuantity: 1, 
+      availableQuantity: 1,
+      status: 'available', 
+      imageUrl: '' 
+    });
     setError('');
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const numericValue = parseInt(value) || 0;
+  
+    if (name === 'totalQuantity') {
+      const currentAvailable = parseInt(form.availableQuantity) || 0;
+      const difference = numericValue - parseInt(form.totalQuantity) || 0;
+      const newAvailable = currentAvailable + difference; 
+  
+      setForm(prev => ({
+        ...prev,
+        totalQuantity: numericValue,
+        availableQuantity: Math.max(0, newAvailable), 
+        status: newAvailable === 0 ? 'unavailable' : 
+               (prev.status === 'unavailable' && newAvailable > 0 ? 'available' : prev.status)
+      }));
+    } else if (name === 'availableQuantity') {
+      const newAvailable = Math.min(numericValue, parseInt(form.totalQuantity) || 0);
+      
+      setForm(prev => ({
+        ...prev,
+        availableQuantity: newAvailable,
+        status: newAvailable === 0 ? 'unavailable' : 
+               (prev.status === 'unavailable' && newAvailable > 0 ? 'available' : prev.status)
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (parseInt(form.availableQuantity) > parseInt(form.totalQuantity)) {
+      setError('Số lượng khả dụng không được vượt quá tổng số lượng');
+      return;
+    }
+  
+    const finalForm = {
+      ...form,
+      status: parseInt(form.availableQuantity) === 0 ? 'unavailable' : form.status
+    };
+  
     try {
       if (editItem) {
-        await equipmentApi.updateEquipment(editItem._id, form, token);
+        await equipmentApi.updateEquipment(editItem._id, finalForm, token);
       } else {
-        await equipmentApi.createEquipment(form, token);
+        await equipmentApi.createEquipment(finalForm, token);
       }
       closeModal();
       fetchEquipment();
@@ -133,7 +189,7 @@ const EquipmentList = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, filters]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -141,7 +197,6 @@ const EquipmentList = () => {
       ...prev,
       [name]: value
     }));
-    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -216,7 +271,7 @@ const EquipmentList = () => {
                 <option value="available">Có sẵn</option>
                 <option value="maintenance">Đang bảo trì</option>
                 <option value="broken">Đã hỏng</option>
-                <option value="unavailable">Không khả dụng</option>
+                <option value="unavailable">Hết hàng</option>
               </select>
             </div>
             <div>
@@ -398,7 +453,7 @@ const EquipmentList = () => {
                           {item.status === 'available' ? 'Có sẵn' :
                            item.status === 'maintenance' ? 'Đang bảo trì' :
                            item.status === 'broken' ? 'Đã hỏng' :
-                           'Không khả dụng'}
+                           'Hết hàng'}
                         </span>
                       </td>
                       <td className="px-4 py-3 border-b text-center text-sm whitespace-nowrap">
@@ -519,6 +574,24 @@ const EquipmentList = () => {
                     />
                   </div>
                   <div>
+                    <label className="block mb-1">Số lượng khả dụng</label>
+                    <input
+                      type="number"
+                      name="availableQuantity"
+                      value={form.availableQuantity}
+                      onChange={handleChange}
+                      className="w-full border px-3 py-2 rounded"
+                      min={0}
+                      max={form.totalQuantity}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Tối đa: {form.totalQuantity}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <label className="block mb-1">Trạng thái</label>
                     <select
                       name="status"
@@ -530,31 +603,31 @@ const EquipmentList = () => {
                       <option value="available">Có sẵn</option>
                       <option value="maintenance">Đang bảo trì</option>
                       <option value="broken">Đã hỏng</option>
-                      <option value="unavailable">Không khả dụng</option>
+                      <option value="unavailable">Hết hàng</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block mb-1">URL Hình ảnh</label>
+                    <input
+                      type="url"
+                      name="imageUrl"
+                      value={form.imageUrl}
+                      onChange={handleChange}
+                      className="w-full border px-3 py-2 rounded"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block mb-1">URL Hình ảnh</label>
-                  <input
-                    type="url"
-                    name="imageUrl"
-                    value={form.imageUrl}
-                    onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {form.imageUrl && (
-                    <div className="mt-2">
-                      <img
-                        src={form.imageUrl}
-                        alt="Preview"
-                        className="max-h-40 object-contain"
-                        onError={(e) => e.target.style.display = 'none'}
-                      />
-                    </div>
-                  )}
-                </div>
+                {form.imageUrl && (
+                  <div className="mt-2">
+                    <img
+                      src={form.imageUrl}
+                      alt="Preview"
+                      className="max-h-40 object-contain"
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex justify-end mt-4">
                 <button
@@ -632,4 +705,4 @@ const EquipmentList = () => {
   );
 };
 
-export default EquipmentList; 
+export default EquipmentList;

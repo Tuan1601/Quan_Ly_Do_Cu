@@ -405,8 +405,13 @@ const RequestsList = () => {
                       <td className="px-4 py-3 text-center text-sm">
                         {req.quantity || 1}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-500 truncate max-w-[200px]">{req.reason}</div>
+                      <td className="px-4 py-3" style={{ maxWidth: '200px' }}>
+                        <div 
+                          className="text-sm text-gray-500 truncate overflow-hidden text-ellipsis whitespace-nowrap"
+                          title={req.notes} 
+                        >
+                          {req.notes}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                         {req.borrowDate ? new Date(req.borrowDate).toLocaleDateString() : 'N/A'}
