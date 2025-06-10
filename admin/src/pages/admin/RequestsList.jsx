@@ -17,7 +17,7 @@ const STATUS_COLORS = {
   rejected: 'bg-red-100 text-red-800',
   borrowed: 'bg-green-100 text-green-800',
   returned: 'bg-gray-100 text-gray-800',
-  overdue: 'bg-red-100 text-red-800',
+  overdue: 'bg-orange-200 text-orange-800',
 };
 
 const PAGE_SIZE = 6;
@@ -27,7 +27,6 @@ const RequestsList = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('');
   const [detail, setDetail] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
@@ -36,10 +35,14 @@ const RequestsList = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
-    startDate: '',
-    endDate: '',
-    minQuantity: '',
-    maxQuantity: '',
+    status: '',
+    borrowDateFrom: '',
+    borrowDateTo: '',
+    expectedReturnDateFrom: '',
+    expectedReturnDateTo: '',
+    actualReturnDateFrom: '',
+    actualReturnDateTo: '',
+    quantity: '',
     equipment: '',
     user: ''
   });
@@ -47,7 +50,7 @@ const RequestsList = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const data = await borrowApi.getAllBorrowRequests(token, filter);
+      const data = await borrowApi.getAllBorrowRequests(token);
       setRequests(data);
       setError('');
     } catch (err) {
@@ -58,28 +61,39 @@ const RequestsList = () => {
 
   useEffect(() => {
     if (token) fetchRequests();
-  }, [token, filter]);
+  }, [token]);
 
   const filteredRequests = requests.filter(req => {
     if (!req) return false;
 
+    const searchLower = filters.search.toLowerCase();
     const matchSearch = !filters.search || 
-      req.user?.username?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      req.user?.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      req.equipment?.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      req.reason?.toLowerCase().includes(filters.search.toLowerCase());
+      req.user?.username?.toLowerCase().includes(searchLower) ||
+      req.user?.email?.toLowerCase().includes(searchLower) ||
+      req.equipment?.name?.toLowerCase().includes(searchLower) ||
+      req.notes?.toLowerCase().includes(searchLower);
 
-    const matchStartDate = !filters.startDate || 
-      new Date(req.borrowDate) >= new Date(filters.startDate);
+    const matchStatus = !filters.status || req.status === filters.status;
 
-    const matchEndDate = !filters.endDate || 
-      new Date(req.borrowDate) <= new Date(filters.endDate);
+    const matchBorrowDateFrom = !filters.borrowDateFrom || 
+      new Date(req.borrowDate) >= new Date(filters.borrowDateFrom);
 
-    const matchMinQuantity = !filters.minQuantity || 
-      req.quantity >= Number(filters.minQuantity);
+    const matchBorrowDateTo = !filters.borrowDateTo || 
+      new Date(req.borrowDate) <= new Date(filters.borrowDateTo);
 
-    const matchMaxQuantity = !filters.maxQuantity || 
-      req.quantity <= Number(filters.maxQuantity);
+    const matchExpectedReturnFrom = !filters.expectedReturnDateFrom || 
+      (req.expectedReturnDate && new Date(req.expectedReturnDate) >= new Date(filters.expectedReturnDateFrom));
+
+    const matchExpectedReturnTo = !filters.expectedReturnDateTo || 
+      (req.expectedReturnDate && new Date(req.expectedReturnDate) <= new Date(filters.expectedReturnDateTo));
+
+    const matchActualReturnFrom = !filters.actualReturnDateFrom || 
+      (req.actualReturnDate && new Date(req.actualReturnDate) >= new Date(filters.actualReturnDateFrom));
+
+    const matchActualReturnTo = !filters.actualReturnDateTo || 
+      (req.actualReturnDate && new Date(req.actualReturnDate) <= new Date(filters.actualReturnDateTo));
+
+    const matchQuantity = !filters.quantity || req.quantity === Number(filters.quantity);
 
     const matchEquipment = !filters.equipment || 
       req.equipment?.name?.toLowerCase().includes(filters.equipment.toLowerCase());
@@ -88,8 +102,10 @@ const RequestsList = () => {
       req.user?.username?.toLowerCase().includes(filters.user.toLowerCase()) ||
       req.user?.email?.toLowerCase().includes(filters.user.toLowerCase());
 
-    return matchSearch && matchStartDate && matchEndDate && 
-           matchMinQuantity && matchMaxQuantity && matchEquipment && matchUser;
+    return matchSearch && matchStatus && matchBorrowDateFrom && matchBorrowDateTo && 
+           matchExpectedReturnFrom && matchExpectedReturnTo &&
+           matchActualReturnFrom && matchActualReturnTo &&
+           matchQuantity && matchEquipment && matchUser;
   });
 
   const totalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
@@ -109,16 +125,19 @@ const RequestsList = () => {
       ...prev,
       [name]: value
     }));
-    setCurrentPage(1);
   };
 
   const resetFilters = () => {
     setFilters({
       search: '',
-      startDate: '',
-      endDate: '',
-      minQuantity: '',
-      maxQuantity: '',
+      status: '',
+      borrowDateFrom: '',
+      borrowDateTo: '',
+      expectedReturnDateFrom: '',
+      expectedReturnDateTo: '',
+      actualReturnDateFrom: '',
+      actualReturnDateTo: '',
+      quantity: '',
       equipment: '',
       user: ''
     });
@@ -199,19 +218,6 @@ const RequestsList = () => {
           Quản lý yêu cầu mượn
         </h2>
         <div className="flex gap-2 items-center">
-        <select
-            className="border px-3 py-2 rounded min-w-[150px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="pending">Chờ duyệt</option>
-          <option value="approved">Đã duyệt</option>
-          <option value="rejected">Từ chối</option>
-          <option value="borrowed">Đã mượn</option>
-          <option value="returned">Đã trả</option>
-          <option value="overdue">Quá hạn</option>
-        </select>
           <button
             className="px-3 py-2 rounded border hover:bg-gray-100 flex items-center gap-1 transition-colors"
             onClick={() => setShowFilters(!showFilters)}
@@ -227,59 +233,96 @@ const RequestsList = () => {
       {showFilters && (
         <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200 shadow-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
+            <div className="sm:col-span-2">
               <label className="block mb-1 font-medium text-gray-700">Tìm kiếm</label>
               <input
                 type="text"
                 name="search"
                 value={filters.search}
                 onChange={handleFilterChange}
-                placeholder="Tìm theo tên, email..."
+                placeholder="Tìm theo tên, email, thiết bị hoặc lý do..."
                 className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
+            
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Từ ngày</label>
+              <label className="block mb-1 font-medium text-gray-700">Trạng thái</label>
+              <select
+                name="status"
+                value={filters.status}
+                onChange={handleFilterChange}
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">Tất cả trạng thái</option>
+                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Ngày mượn từ</label>
               <input
                 type="date"
-                name="startDate"
-                value={filters.startDate}
+                name="borrowDateFrom"
+                value={filters.borrowDateFrom}
                 onChange={handleFilterChange}
                 className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Đến ngày</label>
+              <label className="block mb-1 font-medium text-gray-700">Ngày mượn đến</label>
               <input
                 type="date"
-                name="endDate"
-                value={filters.endDate}
+                name="borrowDateTo"
+                value={filters.borrowDateTo}
+                onChange={handleFilterChange}
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Ngày trả DK từ</label>
+              <input
+                type="date"
+                name="expectedReturnDateFrom"
+                value={filters.expectedReturnDateFrom}
                 onChange={handleFilterChange}
                 className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Số lượng từ</label>
+              <label className="block mb-1 font-medium text-gray-700">Ngày trả DK đến</label>
               <input
-                type="number"
-                name="minQuantity"
-                value={filters.minQuantity}
+                type="date"
+                name="expectedReturnDateTo"
+                value={filters.expectedReturnDateTo}
                 onChange={handleFilterChange}
-                min="1"
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Ngày trả TT từ</label>
+              <input
+                type="date"
+                name="actualReturnDateFrom"
+                value={filters.actualReturnDateFrom}
+                onChange={handleFilterChange}
                 className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Số lượng đến</label>
+              <label className="block mb-1 font-medium text-gray-700">Ngày trả TT đến</label>
               <input
-                type="number"
-                name="maxQuantity"
-                value={filters.maxQuantity}
+                type="date"
+                name="actualReturnDateTo"
+                value={filters.actualReturnDateTo}
                 onChange={handleFilterChange}
-                min="1"
                 className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
+            
             <div>
               <label className="block mb-1 font-medium text-gray-700">Thiết bị</label>
               <input
@@ -287,10 +330,23 @@ const RequestsList = () => {
                 name="equipment"
                 value={filters.equipment}
                 onChange={handleFilterChange}
-                placeholder="Tên thiết bị..."
+                placeholder="Tên thiết bị"
                 className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">Số lượng</label>
+              <input
+                type="number"
+                name="quantity"
+                value={filters.quantity}
+                onChange={handleFilterChange}
+                placeholder="Chính xác số lượng"
+                min="1"
+                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            
             <div>
               <label className="block mb-1 font-medium text-gray-700">Người mượn</label>
               <input
@@ -298,20 +354,24 @@ const RequestsList = () => {
                 name="user"
                 value={filters.user}
                 onChange={handleFilterChange}
-                placeholder="Tên hoặc email..."
+                placeholder="Tên hoặc email"
                 className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
           </div>
-          <div className="flex justify-end mt-4">
+          
+          <div className="flex justify-end mt-4 gap-2">
             <button
-              className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 transition-colors flex items-center gap-1"
+              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition-colors"
               onClick={resetFilters}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Đặt lại
+              Đặt lại bộ lọc
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              onClick={() => setShowFilters(false)}
+            >
+              Áp dụng bộ lọc
             </button>
           </div>
         </div>
@@ -389,11 +449,11 @@ const RequestsList = () => {
                     <th scope="col" className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24 border-b">
                       Thao tác
                     </th>
-              </tr>
-            </thead>
+                  </tr>
+                </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedRequests.map((req) => (
-                <tr key={req._id} className="hover:bg-gray-50">
+                    <tr key={req._id} className="hover:bg-gray-50">
                       <td className="sticky left-0 z-10 bg-white px-4 py-3 group-hover:bg-gray-50">
                         <div className="text-sm font-medium text-gray-900">{req.user?.username || 'N/A'}</div>
                         <div className="text-xs text-gray-500">{req.user?.email}</div>
@@ -415,31 +475,31 @@ const RequestsList = () => {
                       </td>
                       <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                         {req.borrowDate ? new Date(req.borrowDate).toLocaleDateString() : 'N/A'}
-                  </td>
+                      </td>
                       <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                         {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
-                  </td>
+                      </td>
                       <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                         {req.actualReturnDate ? new Date(req.actualReturnDate).toLocaleDateString() : '-'}
-                  </td>
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${STATUS_COLORS[req.status]}`}>
-                      {STATUS_LABELS[req.status]}
-                    </span>
-                  </td>
+                          {STATUS_LABELS[req.status]}
+                        </span>
+                      </td>
                       <td className="sticky right-0 z-10 bg-white px-4 py-3 text-right group-hover:bg-gray-50">
-                    <button
-                      onClick={() => openDetail(req._id)}
+                        <button
+                          onClick={() => openDetail(req._id)}
                           className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors"
-                    >
-                      Chi tiết
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        >
+                          Chi tiết
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
@@ -621,4 +681,4 @@ const RequestsList = () => {
   );
 };
 
-export default RequestsList; 
+export default RequestsList;
