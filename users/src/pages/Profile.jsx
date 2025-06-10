@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { updateProfile } from '../api/userApi';
+import { updateProfile, getMe } from '../api/userApi'; 
 import { FaUser, FaCamera, FaEnvelope, FaPhone, FaSpinner, FaLink, FaKey } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
@@ -16,7 +16,6 @@ const Profile = () => {
     username: user?.username || '',
     phoneNumber: user?.phoneNumber || ''
   });
-  const fileInputRef = React.useRef(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -32,8 +31,9 @@ const Profile = () => {
     setSuccess('');
 
     try {
-      const response = await updateProfile(formData);
-      setUser({ ...user, ...formData });
+      await updateProfile(formData);
+      const res = await getMe();
+      setUser(res.data); 
       setSuccess('Cập nhật thông tin thành công!');
       setIsEditing(false);
     } catch (error) {
@@ -56,7 +56,8 @@ const Profile = () => {
 
     try {
       await updateProfile({ avatarUrl });
-      setUser({ ...user, avatarUrl });
+      const res = await getMe();
+      setUser(res.data); 
       setSuccess('Cập nhật ảnh đại diện thành công!');
       setIsEditingAvatar(false);
     } catch (error) {

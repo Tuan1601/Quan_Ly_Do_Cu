@@ -11,6 +11,10 @@ const History = () => {
   const [sortConfig, setSortConfig] = useState({ field: 'borrowDate', direction: 'desc' });
   const [showFilters, setShowFilters] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [dateRange, setDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -114,6 +118,21 @@ const History = () => {
     }).format(date);
   };
 
+  const handleDateRangeChange = (e) => {
+    const { name, value } = e.target;
+    setDateRange(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const resetDateRange = () => {
+    setDateRange({
+      startDate: '',
+      endDate: ''
+    });
+  };
+
   const filteredAndSortedHistory = history
     .filter(item => {
       const matchesFilter = filter === 'all' || item.status === filter;
@@ -121,13 +140,31 @@ const History = () => {
         item.equipment?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.equipment?.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.note && item.note.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesFilter && matchesSearch;
+      
+      // Kiểm tra khoảng thời gian
+      const borrowDate = new Date(item.borrowDate);
+      const matchesStartDate = !dateRange.startDate || borrowDate >= new Date(dateRange.startDate);
+      const matchesEndDate = !dateRange.endDate || borrowDate <= new Date(dateRange.endDate);
+      
+      return matchesFilter && matchesSearch && matchesStartDate && matchesEndDate;
     })
     .sort((a, b) => {
       const direction = sortConfig.direction === 'asc' ? 1 : -1;
-      if (sortConfig.field === 'borrowDate') {
-        return direction * (new Date(a.borrowDate) - new Date(b.borrowDate));
+      
+      if (sortConfig.field === 'borrowDate' || sortConfig.field === 'expectedReturnDate' || sortConfig.field === 'actualReturnDate') {
+        const dateA = new Date(a[sortConfig.field] || 0);
+        const dateB = new Date(b[sortConfig.field] || 0);
+        return direction * (dateA - dateB);
       }
+      
+      if (sortConfig.field === 'status') {
+        return direction * getStatusText(a.status).localeCompare(getStatusText(b.status));
+      }
+      
+      if (sortConfig.field === 'equipmentName') {
+        return direction * a.equipment?.name.localeCompare(b.equipment?.name);
+      }
+      
       return direction * (a[sortConfig.field] > b[sortConfig.field] ? 1 : -1);
     });
 
@@ -139,7 +176,7 @@ const History = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, searchTerm]);
+  }, [filter, searchTerm, dateRange]);
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8">
@@ -202,8 +239,10 @@ const History = () => {
                   className="w-full rounded-lg border border-gray-300 p-2.5 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="borrowDate">Ngày mượn</option>
-                  <option value="returnDate">Ngày trả</option>
+                  <option value="expectedReturnDate">Ngày trả dự kiến</option>
+                  <option value="actualReturnDate">Ngày trả thực tế</option>
                   <option value="status">Trạng thái</option>
+                  <option value="equipmentName">Tên thiết bị</option>
                 </select>
               </div>
               
@@ -219,19 +258,31 @@ const History = () => {
                 </select>
               </div>
 
-              <div>
+              <div className="sm:col-span-2 lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Khoảng thời gian</label>
-                <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 p-2.5 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">Tất cả</option>
-                  <option value="today">Hôm nay</option>
-                  <option value="week">Tuần này</option>
-                  <option value="month">Tháng này</option>
-                  <option value="year">Năm nay</option>
-                </select>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={dateRange.startDate}
+                    onChange={handleDateRangeChange}
+                    className="w-full rounded-lg border border-gray-300 p-2.5 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={dateRange.endDate}
+                    onChange={handleDateRangeChange}
+                    className="w-full rounded-lg border border-gray-300 p-2.5 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <button
+                    onClick={resetDateRange}
+                    className="px-3 py-2.5 rounded-lg bg-gray-100 hover:bg-gray-200"
+                    title="Đặt lại"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -273,6 +324,9 @@ const History = () => {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Ngày trả dự kiến
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                      Ngày trả thực tế
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Thao tác
@@ -318,6 +372,11 @@ const History = () => {
                       <td className="px-4 py-4 whitespace-nowrap hidden lg:table-cell">
                         <div className="text-sm text-gray-900">
                           {item.expectedReturnDate ? formatDate(item.expectedReturnDate) : '-'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap hidden lg:table-cell">
+                        <div className="text-sm text-gray-900">
+                          {item.actualReturnDate ? formatDate(item.actualReturnDate) : '-'}
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -430,9 +489,15 @@ const History = () => {
                     <p className="mt-1 text-sm text-gray-900">{formatDate(selectedItem.borrowDate)}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Ngày trả (dự kiến)</p>
+                    <p className="text-sm font-medium text-gray-500">Ngày trả dự kiến</p>
                     <p className="mt-1 text-sm text-gray-900">
                       {selectedItem.expectedReturnDate ? formatDate(selectedItem.expectedReturnDate) : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Ngày trả thực tế</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedItem.actualReturnDate ? formatDate(selectedItem.actualReturnDate) : '-'}
                     </p>
                   </div>
                   <div>
@@ -440,12 +505,6 @@ const History = () => {
                     <p className="mt-1 text-sm text-gray-900">{selectedItem.notes || '-'}</p>
                   </div>
                 </div>
-
-                {selectedItem.status === 'borrowed' && (
-                  <div className="pt-4 border-t border-gray-200">
-                    {/* Đã bỏ nút Trả thiết bị ở đây */}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -455,4 +514,4 @@ const History = () => {
   );
 };
 
-export default History; 
+export default History;

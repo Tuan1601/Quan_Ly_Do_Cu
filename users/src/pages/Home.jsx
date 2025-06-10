@@ -7,7 +7,6 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 
-// Custom CSS cho slider
 const sliderStyles = `
   .featured-slider .slick-list {
     margin: 0 -12px;
@@ -122,7 +121,7 @@ const Banner = () => (
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'cover',
                 backgroundPosition: '50% 30%',
-                transform: 'scale(1.02)', // Slight scale to prevent white edges during transitions
+                transform: 'scale(1.02)', 
               }}
             />
             
@@ -261,7 +260,6 @@ const Home = () => {
       <Banner />
 
       <div className="container mx-auto px-4">
-        {/* Quick Actions */}
         <QuickActions />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 my-8">
