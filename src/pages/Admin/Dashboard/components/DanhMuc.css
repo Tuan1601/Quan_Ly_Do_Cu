@@ -1,0 +1,53 @@
+.danhmuc-tabs .ant-tabs-nav-list {
+  width: 100%;
+  display: flex !important;
+  justify-content: space-between;
+}
+
+.danhmuc-tabs .ant-tabs-tab {
+  flex: 1 1 0;
+  text-align: center;
+  justify-content: center;
+  min-width: 0;
+  color: #222b45;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.danhmuc-tabs .ant-tabs-tab-active {
+  background: #e3eaf2 !important;
+  color: #5dade2 !important;
+  border-radius: 8px 8px 0 0;
+}
+
+.danhmuc-tabs .ant-tabs-tab:hover {
+  background: #eaf0f6;
+  color: #5dade2;
+}
+
+.danhmuc-tab-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .danhmuc-tab-label {
+    font-size: 18px;
+    gap: 0;
+  }
+  .danhmuc-tab-label::after {
+    content: "";
+  }
+  .danhmuc-tab-label {
+    /* Ẩn chữ, chỉ giữ icon */
+  }
+  .danhmuc-tab-label > span:not(:first-child) {
+    display: none !important;
+  }
+}
