@@ -1,383 +1,416 @@
-import React, { useEffect, useState } from 'react';
-import * as borrowApi from '../../api/borrowApi';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useEffect, useState } from 'react'
+import * as equipmentApi from '../../api/equipmentApi'
+import { useAuth } from '../../contexts/AuthContext'
 
-const STATUS_LABELS = {
-  pending: 'Chờ duyệt',
-  approved: 'Đã duyệt',
-  rejected: 'Từ chối',
-  borrowed: 'Đã mượn',
-  returned: 'Đã trả',
-  overdue: 'Quá hạn',
-};
+const PAGE_SIZE = 5
 
-const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  approved: 'bg-blue-100 text-blue-800',
-  rejected: 'bg-red-100 text-red-800',
-  borrowed: 'bg-green-100 text-green-800',
-  returned: 'bg-gray-100 text-gray-800',
-  overdue: 'bg-red-100 text-red-800',
-};
-
-const PAGE_SIZE = 6;
-
-const RequestsList = () => {
-  const { token } = useAuth();
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [detail, setDetail] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [adminNotes, setAdminNotes] = useState('');
-  const [confirmAction, setConfirmAction] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
+const EquipmentList = () => {
+  const { token } = useAuth()
+  const [equipment, setEquipment] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [editItem, setEditItem] = useState(null)
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    totalQuantity: 1,
+    availableQuantity: 1,
+    status: 'available',
+    imageUrl: '',
+  })
+  const [search, setSearch] = useState('')
+  const [detailItem, setDetailItem] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [filters, setFilters] = useState({
-    search: '',
     status: '',
-    borrowDateFrom: '',
-    borrowDateTo: '',
-    expectedReturnDateFrom: '',
-    expectedReturnDateTo: '',
-    actualReturnDateFrom: '',
-    actualReturnDateTo: '',
-    quantity: '',
-    equipment: '',
-    user: ''
-  });
+    minQuantity: '',
+    maxQuantity: '',
+    minAvailable: '',
+    maxAvailable: '',
+    fromDate: '',
+    toDate: '',
+  })
 
-  const fetchRequests = async () => {
-    setLoading(true);
+  const fetchEquipment = async () => {
+    setLoading(true)
     try {
-      const data = await borrowApi.getAllBorrowRequests(token);
-      setRequests(data);
-      setError('');
+      const data = await equipmentApi.getAllEquipment()
+      setEquipment(data)
     } catch (err) {
-      setError('Không thể tải danh sách yêu cầu.');
+      setError('Không thể tải danh sách thiết bị.')
     }
-    setLoading(false);
-  };
+    setLoading(false)
+  }
 
   useEffect(() => {
-    if (token) fetchRequests();
-  }, [token]);
+    fetchEquipment()
+  }, [])
 
-  const filteredRequests = requests.filter(req => {
-    if (!req) return false;
+  const openModal = (item = null) => {
+    setEditItem(item)
+    setForm(
+      item
+        ? {
+            name: item.name,
+            description: item.description,
+            totalQuantity: item.totalQuantity,
+            availableQuantity: item.availableQuantity,
+            status: item.status,
+            imageUrl: item.imageUrl,
+          }
+        : {
+            name: '',
+            description: '',
+            totalQuantity: 1,
+            availableQuantity: 1,
+            status: 'available',
+            imageUrl: '',
+          }
+    )
+    setShowModal(true)
+  }
 
-    const searchLower = filters.search.toLowerCase();
-    const matchSearch = !filters.search || 
-      req.user?.username?.toLowerCase().includes(searchLower) ||
-      req.user?.email?.toLowerCase().includes(searchLower) ||
-      req.equipment?.name?.toLowerCase().includes(searchLower) ||
-      req.notes?.toLowerCase().includes(searchLower);
+  const closeModal = () => {
+    setShowModal(false)
+    setEditItem(null)
+    setForm({
+      name: '',
+      description: '',
+      totalQuantity: 1,
+      availableQuantity: 1,
+      status: 'available',
+      imageUrl: '',
+    })
+    setError('')
+  }
 
-    const matchStatus = !filters.status || req.status === filters.status;
+  const handleChange = e => {
+    const { name, value } = e.target
+    const numericValue = parseInt(value) || 0
 
-    const matchBorrowDateFrom = !filters.borrowDateFrom || 
-      new Date(req.borrowDate) >= new Date(filters.borrowDateFrom);
+    if (name === 'totalQuantity') {
+      const currentAvailable = parseInt(form.availableQuantity) || 0
+      const difference = numericValue - parseInt(form.totalQuantity) || 0
+      const newAvailable = currentAvailable + difference
 
-    const matchBorrowDateTo = !filters.borrowDateTo || 
-      new Date(req.borrowDate) <= new Date(filters.borrowDateTo);
+      setForm(prev => ({
+        ...prev,
+        totalQuantity: numericValue,
+        availableQuantity: Math.max(0, newAvailable),
+        status:
+          newAvailable === 0
+            ? 'unavailable'
+            : prev.status === 'unavailable' && newAvailable > 0
+            ? 'available'
+            : prev.status,
+      }))
+    } else if (name === 'availableQuantity') {
+      const newAvailable = Math.min(numericValue, parseInt(form.totalQuantity) || 0)
 
-    const matchExpectedReturnFrom = !filters.expectedReturnDateFrom || 
-      (req.expectedReturnDate && new Date(req.expectedReturnDate) >= new Date(filters.expectedReturnDateFrom));
+      setForm(prev => ({
+        ...prev,
+        availableQuantity: newAvailable,
+        status:
+          newAvailable === 0
+            ? 'unavailable'
+            : prev.status === 'unavailable' && newAvailable > 0
+            ? 'available'
+            : prev.status,
+      }))
+    } else {
+      setForm(prev => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
 
-    const matchExpectedReturnTo = !filters.expectedReturnDateTo || 
-      (req.expectedReturnDate && new Date(req.expectedReturnDate) <= new Date(filters.expectedReturnDateTo));
+  const handleSubmit = async e => {
+    e.preventDefault()
 
-    const matchActualReturnFrom = !filters.actualReturnDateFrom || 
-      (req.actualReturnDate && new Date(req.actualReturnDate) >= new Date(filters.actualReturnDateFrom));
+    if (parseInt(form.availableQuantity) > parseInt(form.totalQuantity)) {
+      setError('Số lượng khả dụng không được vượt quá tổng số lượng')
+      return
+    }
 
-    const matchActualReturnTo = !filters.actualReturnDateTo || 
-      (req.actualReturnDate && new Date(req.actualReturnDate) <= new Date(filters.actualReturnDateTo));
+    const finalForm = {
+      ...form,
+      status: parseInt(form.availableQuantity) === 0 ? 'unavailable' : form.status,
+    }
 
-    const matchQuantity = !filters.quantity || req.quantity === Number(filters.quantity);
+    try {
+      if (editItem) {
+        await equipmentApi.updateEquipment(editItem._id, finalForm, token)
+      } else {
+        await equipmentApi.createEquipment(finalForm, token)
+      }
+      closeModal()
+      fetchEquipment()
+    } catch (err) {
+      setError('Có lỗi xảy ra. Vui lòng thử lại.')
+    }
+  }
 
-    const matchEquipment = !filters.equipment || 
-      req.equipment?.name?.toLowerCase().includes(filters.equipment.toLowerCase());
+  const handleDelete = async id => {
+    if (!window.confirm('Bạn có chắc muốn xóa thiết bị này?')) return
+    try {
+      await equipmentApi.deleteEquipment(id, token)
+      fetchEquipment()
+    } catch (err) {
+      setError('Không thể xóa thiết bị.')
+    }
+  }
 
-    const matchUser = !filters.user || 
-      req.user?.username?.toLowerCase().includes(filters.user.toLowerCase()) ||
-      req.user?.email?.toLowerCase().includes(filters.user.toLowerCase());
+  const handleShowDetail = item => {
+    setDetailItem(item)
+  }
+  const closeDetail = () => setDetailItem(null)
 
-    return matchSearch && matchStatus && matchBorrowDateFrom && matchBorrowDateTo && 
-           matchExpectedReturnFrom && matchExpectedReturnTo &&
-           matchActualReturnFrom && matchActualReturnTo &&
-           matchQuantity && matchEquipment && matchUser;
-  });
+  const filteredEquipment = equipment.filter(item => {
+    const matchSearch =
+      !search ||
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.description.toLowerCase().includes(search.toLowerCase())
 
-  const totalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
-  const paginatedRequests = filteredRequests.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+    const matchStatus = !filters.status || item.status === filters.status
+    const matchMinQuantity = !filters.minQuantity || item.totalQuantity >= Number(filters.minQuantity)
+    const matchMaxQuantity = !filters.maxQuantity || item.totalQuantity <= Number(filters.maxQuantity)
+    const matchMinAvailable = !filters.minAvailable || item.availableQuantity >= Number(filters.minAvailable)
+    const matchMaxAvailable = !filters.maxAvailable || item.availableQuantity <= Number(filters.maxAvailable)
 
-  const handlePageChange = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
+    const itemDate = new Date(item.createdAt)
+    const matchFromDate = !filters.fromDate || itemDate >= new Date(filters.fromDate)
+    const matchToDate = !filters.toDate || itemDate <= new Date(filters.toDate)
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
+    return (
+      matchSearch &&
+      matchStatus &&
+      matchMinQuantity &&
+      matchMaxQuantity &&
+      matchMinAvailable &&
+      matchMaxAvailable &&
+      matchFromDate &&
+      matchToDate
+    )
+  })
+  const totalPage = Math.ceil(filteredEquipment.length / PAGE_SIZE)
+  const paginatedEquipment = filteredEquipment.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  const handlePageChange = page => {
+    if (page < 1 || page > totalPage) return
+    setCurrentPage(page)
+  }
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, filters])
+
+  const handleFilterChange = e => {
+    const { name, value } = e.target
     setFilters(prev => ({
       ...prev,
-      [name]: value
-    }));
-  };
+      [name]: value,
+    }))
+  }
 
   const resetFilters = () => {
     setFilters({
-      search: '',
       status: '',
-      borrowDateFrom: '',
-      borrowDateTo: '',
-      expectedReturnDateFrom: '',
-      expectedReturnDateTo: '',
-      actualReturnDateFrom: '',
-      actualReturnDateTo: '',
-      quantity: '',
-      equipment: '',
-      user: ''
-    });
-    setCurrentPage(1);
-  };
-
-  const openDetail = async (id) => {
-    setActionLoading(true);
-    try {
-      const data = await borrowApi.getBorrowRequestById(id, token);
-      setDetail(data);
-      setAdminNotes(data.adminNotes || '');
-      setError('');
-    } catch (err) {
-      setError('Không thể tải chi tiết yêu cầu.');
-    }
-    setActionLoading(false);
-  };
-
-  const closeDetail = () => {
-    setDetail(null);
-    setAdminNotes('');
-    setConfirmAction(null);
-  };
-
-  const handleStatus = async (status) => {
-    if (!detail) return;
-    setActionLoading(true);
-    try {
-      await borrowApi.updateBorrowRequestStatus(detail._id, status, adminNotes, token);
-      closeDetail();
-      fetchRequests();
-    } catch (err) {
-      setError('Không thể cập nhật trạng thái.');
-    }
-    setActionLoading(false);
-  };
-
-  const handleConfirmBorrow = async () => {
-    if (!detail) return;
-    setActionLoading(true);
-    try {
-      await borrowApi.confirmBorrow(detail._id, token);
-      closeDetail();
-      fetchRequests();
-      setError('');
-    } catch (err) {
-      setError('Không thể xác nhận mượn. Vui lòng thử lại.');
-    }
-    setActionLoading(false);
-  };
-
-  const handleConfirmReturn = async () => {
-    if (!detail) return;
-    setActionLoading(true);
-    try {
-      await borrowApi.confirmReturn(detail._id, token);
-      closeDetail();
-      fetchRequests();
-      setError('');
-    } catch (err) {
-      setError('Không thể xác nhận trả. Vui lòng thử lại.');
-    }
-    setActionLoading(false);
-  };
-
-  const showConfirmDialog = (action, message) => {
-    setConfirmAction({ action, message });
-  };
+      minQuantity: '',
+      maxQuantity: '',
+      minAvailable: '',
+      maxAvailable: '',
+      fromDate: '',
+      toDate: '',
+    })
+    setSearch('')
+    setCurrentPage(1)
+  }
 
   return (
-    <div className="p-4">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-          </svg>
-          Quản lý yêu cầu mượn
-        </h2>
-        <div className="flex gap-2 items-center">
-          <button
-            className="px-3 py-2 rounded border hover:bg-gray-100 flex items-center gap-1 transition-colors"
-            onClick={() => setShowFilters(!showFilters)}
+    <div className="p-4 max-w-[2000px] mx-auto">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
+        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 md:h-7 w-6 md:w-7 text-indigo-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
+          </svg>
+          Quản lý thiết bị
+        </h2>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 sm:flex-none">
+            <input
+              type="text"
+              placeholder="Tìm kiếm thiết bị..."
+              className="w-full sm:w-64 pl-10 pr-4 py-2 border rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-gray-400 absolute left-3 top-2.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
-            {showFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
+          </div>
+          <button
+            className="px-3 py-2 rounded-lg border hover:bg-gray-50 flex items-center justify-center gap-1 transition-colors sm:flex-none"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            {showAdvancedFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
+          </button>
+          <button
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 sm:flex-none"
+            onClick={() => openModal()}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Thêm thiết bị
           </button>
         </div>
       </div>
 
-      {showFilters && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Nhóm 1: Tìm kiếm chung và trạng thái */}
-            <div className="sm:col-span-2">
-              <label className="block mb-1 font-medium text-gray-700">Tìm kiếm</label>
-              <input
-                type="text"
-                name="search"
-                value={filters.search}
-                onChange={handleFilterChange}
-                placeholder="Tìm theo tên, email, thiết bị hoặc lý do..."
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            
+      {showAdvancedFilters && (
+        <div className="bg-white p-4 rounded-lg shadow-lg mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Trạng thái</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
               <select
                 name="status"
                 value={filters.status}
                 onChange={handleFilterChange}
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full border rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">Tất cả trạng thái</option>
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
+                <option value="available">Có sẵn</option>
+                <option value="maintenance">Đang bảo trì</option>
+                <option value="broken">Đã hỏng</option>
+                <option value="unavailable">Hết hàng</option>
               </select>
             </div>
-            
-            {/* Nhóm 2: Ngày mượn */}
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Ngày mượn từ</label>
-              <input
-                type="date"
-                name="borrowDateFrom"
-                value={filters.borrowDateFrom}
-                onChange={handleFilterChange}
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  name="minQuantity"
+                  value={filters.minQuantity}
+                  onChange={handleFilterChange}
+                  placeholder="Từ"
+                  className="w-full border rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+                <input
+                  type="number"
+                  name="maxQuantity"
+                  value={filters.maxQuantity}
+                  onChange={handleFilterChange}
+                  placeholder="Đến"
+                  className="w-full border rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
             </div>
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Ngày mượn đến</label>
-              <input
-                type="date"
-                name="borrowDateTo"
-                value={filters.borrowDateTo}
-                onChange={handleFilterChange}
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            
-            {/* Nhóm 3: Ngày trả dự kiến */}
-            <div>
-              <label className="block mb-1 font-medium text-gray-700">Ngày trả DK từ</label>
-              <input
-                type="date"
-                name="expectedReturnDateFrom"
-                value={filters.expectedReturnDateFrom}
-                onChange={handleFilterChange}
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block mb-1 font-medium text-gray-700">Ngày trả DK đến</label>
-              <input
-                type="date"
-                name="expectedReturnDateTo"
-                value={filters.expectedReturnDateTo}
-                onChange={handleFilterChange}
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            
-            {/* Nhóm 4: Ngày trả thực tế */}
-            <div>
-              <label className="block mb-1 font-medium text-gray-700">Ngày trả TT từ</label>
-              <input
-                type="date"
-                name="actualReturnDateFrom"
-                value={filters.actualReturnDateFrom}
-                onChange={handleFilterChange}
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng khả dụng</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  name="minAvailable"
+                  value={filters.minAvailable}
+                  onChange={handleFilterChange}
+                  placeholder="Từ"
+                  className="w-full border rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+                <input
+                  type="number"
+                  name="maxAvailable"
+                  value={filters.maxAvailable}
+                  onChange={handleFilterChange}
+                  placeholder="Đến"
+                  className="w-full border rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
             </div>
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Ngày trả TT đến</label>
-              <input
-                type="date"
-                name="actualReturnDateTo"
-                value={filters.actualReturnDateTo}
-                onChange={handleFilterChange}
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            
-            {/* Nhóm 5: Thiết bị và số lượng */}
-            <div>
-              <label className="block mb-1 font-medium text-gray-700">Thiết bị</label>
-              <input
-                type="text"
-                name="equipment"
-                value={filters.equipment}
-                onChange={handleFilterChange}
-                placeholder="Tên thiết bị"
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block mb-1 font-medium text-gray-700">Số lượng</label>
-              <input
-                type="number"
-                name="quantity"
-                value={filters.quantity}
-                onChange={handleFilterChange}
-                placeholder="Chính xác số lượng"
-                min="1"
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            
-            {/* Nhóm 6: Người mượn */}
-            <div>
-              <label className="block mb-1 font-medium text-gray-700">Người mượn</label>
-              <input
-                type="text"
-                name="user"
-                value={filters.user}
-                onChange={handleFilterChange}
-                placeholder="Tên hoặc email"
-                className="w-full border px-3 py-2 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ngày tạo</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  name="fromDate"
+                  value={filters.fromDate}
+                  onChange={handleFilterChange}
+                  className="w-full border rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+                <input
+                  type="date"
+                  name="toDate"
+                  value={filters.toDate}
+                  onChange={handleFilterChange}
+                  className="w-full border rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
             </div>
           </div>
-          
-          <div className="flex justify-end mt-4 gap-2">
+          <div className="flex justify-end mt-4">
             <button
-              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition-colors"
               onClick={resetFilters}
+              className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
               Đặt lại bộ lọc
-            </button>
-            <button
-              className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-              onClick={() => setShowFilters(false)}
-            >
-              Áp dụng bộ lọc
             </button>
           </div>
         </div>
@@ -388,7 +421,12 @@ const RequestsList = () => {
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
             <div className="ml-3">
@@ -405,10 +443,9 @@ const RequestsList = () => {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-white rounded-lg shadow-lg">
             <div className="scrollbar-custom overflow-x-auto">
-              <style>
-                {`
+              <style jsx>{`
                 .scrollbar-custom::-webkit-scrollbar {
                   height: 8px;
                 }
@@ -423,83 +460,136 @@ const RequestsList = () => {
                 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
                   background: #cdcdcd;
                 }
-                `}
-              </style>
-              <table className="min-w-full divide-y divide-gray-200 border-collapse">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="sticky left-0 z-10 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
-                      Người mượn
+              `}</style>
+              <table className="min-w-full table-fixed divide-y divide-gray-200 border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b w-32 bg-gray-50 sticky left-0 z-10">
+                      Hình ảnh
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
-                      Thiết bị
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b min-w-[200px]">
+                      Tên thiết bị
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20 border-b">
-                      SL
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b min-w-[300px]">
+                      Mô tả
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                      Lý do mượn
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b w-28">
+                      Tổng SL
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
-                      Ngày mượn
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b w-28">
+                      SL khả dụng
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
-                      Ngày trả dự kiến
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
-                      Ngày trả thực tế
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap border-b">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b w-32">
                       Trạng thái
                     </th>
-                    <th scope="col" className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24 border-b">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b w-32">
+                      Ngày tạo
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b w-40 bg-gray-50 sticky right-0 z-10">
                       Thao tác
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedRequests.map((req) => (
-                    <tr key={req._id} className="hover:bg-gray-50">
-                      <td className="sticky left-0 z-10 bg-white px-4 py-3 group-hover:bg-gray-50">
-                        <div className="text-sm font-medium text-gray-900">{req.user?.username || 'N/A'}</div>
-                        <div className="text-xs text-gray-500">{req.user?.email}</div>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {paginatedEquipment.map(item => (
+                    <tr key={item._id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 border-b w-32 bg-white sticky left-0 z-10">
+                        {item.imageUrl ? (
+                          <div className="relative w-24 h-24 mx-auto rounded-lg overflow-hidden bg-gray-50 border">
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
+                              onError={e => {
+                                e.target.onerror = null
+                                e.target.src = 'https://via.placeholder.com/200x200?text=No+Image'
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-24 h-24 mx-auto rounded-lg bg-gray-50 border flex items-center justify-center text-gray-400">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-10 w-10"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                        )}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm">{req.equipment?.name || 'N/A'}</div>
-                        <div className="text-xs text-gray-500 truncate max-w-[200px]">{req.equipment?.description}</div>
+                      <td className="px-4 py-3 border-b">
+                        <div className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}</div>
                       </td>
-                      <td className="px-4 py-3 text-center text-sm">
-                        {req.quantity || 1}
+                      <td className="px-4 py-3 border-b">
+                        <div className="text-sm text-gray-500 line-clamp-2">{item.description}</div>
                       </td>
-                      <td className="px-4 py-3" style={{ maxWidth: '200px' }}>
-                        <div 
-                          className="text-sm text-gray-500 truncate overflow-hidden text-ellipsis whitespace-nowrap"
-                          title={req.notes} 
+                      <td className="px-4 py-3 border-b text-center text-sm">{item.totalQuantity}</td>
+                      <td className="px-4 py-3 border-b text-center">
+                        <span
+                          className={`text-sm font-medium ${
+                            item.availableQuantity === 0
+                              ? 'text-red-600'
+                              : item.availableQuantity <= item.totalQuantity * 0.2
+                              ? 'text-yellow-600'
+                              : 'text-green-600'
+                          }`}
                         >
-                          {req.notes}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
-                        {req.borrowDate ? new Date(req.borrowDate).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
-                        {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
-                        {req.actualReturnDate ? new Date(req.actualReturnDate).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${STATUS_COLORS[req.status]}`}>
-                          {STATUS_LABELS[req.status]}
+                          {item.availableQuantity}
                         </span>
                       </td>
-                      <td className="sticky right-0 z-10 bg-white px-4 py-3 text-right group-hover:bg-gray-50">
-                        <button
-                          onClick={() => openDetail(req._id)}
-                          className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors"
+                      <td className="px-4 py-3 border-b text-center">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                            item.status === 'available'
+                              ? 'bg-green-100 text-green-800'
+                              : item.status === 'maintenance'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : item.status === 'broken'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
                         >
-                          Chi tiết
-                        </button>
+                          {item.status === 'available'
+                            ? 'Có sẵn'
+                            : item.status === 'maintenance'
+                            ? 'Đang bảo trì'
+                            : item.status === 'broken'
+                            ? 'Đã hỏng'
+                            : 'Hết hàng'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 border-b text-center text-sm whitespace-nowrap">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''}
+                      </td>
+                      <td className="px-4 py-3 border-b bg-white sticky right-0 z-10">
+                        <div className="flex justify-center items-center gap-1">
+                          <button
+                            onClick={() => handleShowDetail(item)}
+                            className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 transition-colors whitespace-nowrap"
+                          >
+                            Chi tiết
+                          </button>
+                          <button
+                            onClick={() => openModal(item)}
+                            className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors whitespace-nowrap"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded hover:bg-red-100 transition-colors whitespace-nowrap"
+                          >
+                            Xóa
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -510,25 +600,30 @@ const RequestsList = () => {
 
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
             <div className="text-sm text-gray-700 whitespace-nowrap">
-              Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} đến {Math.min(currentPage * PAGE_SIZE, filteredRequests.length)} trong số {filteredRequests.length} yêu cầu
+              Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} đến{' '}
+              {Math.min(currentPage * PAGE_SIZE, filteredEquipment.length)} trong số {filteredEquipment.length} thiết bị
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               <button
                 className="px-3 py-1 rounded border bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Trước
               </button>
-              {Array.from({ length: totalPages }, (_, i) => (
+              {Array.from({ length: totalPage }, (_, i) => (
                 <button
                   key={i}
                   className={`px-3 py-1 rounded border transition-colors min-w-[2.5rem] ${
-                    currentPage === i + 1 
-                      ? 'bg-indigo-600 text-white border-indigo-600 font-medium' 
+                    currentPage === i + 1
+                      ? 'bg-indigo-600 text-white border-indigo-600 font-medium'
                       : 'bg-white hover:bg-gray-50'
                   }`}
                   onClick={() => handlePageChange(i + 1)}
@@ -539,11 +634,15 @@ const RequestsList = () => {
               <button
                 className="px-3 py-1 rounded border bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPage}
               >
                 Sau
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
             </div>
@@ -551,140 +650,190 @@ const RequestsList = () => {
         </>
       )}
 
-      {detail && (
+      {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
-            <h3 className="text-xl font-bold mb-4">Chi tiết yêu cầu mượn</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-              <div>
-                <h4 className="font-semibold mb-2">Thông tin người mượn</h4>
-                <div className="space-y-2">
-                  <div><b>Họ tên:</b> {detail.user?.username}</div>
-                  <div><b>Email:</b> {detail.user?.email}</div>
-                  <div><b>Số điện thoại:</b> {detail.user?.phoneNumber}</div>
+            <h3 className="text-xl font-bold mb-4">{editItem ? 'Sửa thiết bị' : 'Thêm thiết bị'}</h3>
+            {error && <div className="text-red-600 mb-2">{error}</div>}
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block mb-1">Tên thiết bị</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    className="w-full border px-3 py-2 rounded"
+                    required
+                  />
                 </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-2">Thông tin thiết bị</h4>
-                <div className="space-y-2">
-                  <div><b>Tên thiết bị:</b> {detail.equipment?.name}</div>
-                  <div><b>Mô tả:</b> {detail.equipment?.description}</div>
-                  <div><b>Số lượng khả dụng:</b> {detail.equipment?.availableQuantity}/{detail.equipment?.totalQuantity}</div>
+                <div>
+                  <label className="block mb-1">Mô tả</label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    className="w-full border px-3 py-2 rounded"
+                    rows={3}
+                    required
+                  />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1">Tổng số lượng</label>
+                    <input
+                      type="number"
+                      name="totalQuantity"
+                      value={form.totalQuantity}
+                      onChange={handleChange}
+                      className="w-full border px-3 py-2 rounded"
+                      min={1}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1">Số lượng khả dụng</label>
+                    <input
+                      type="number"
+                      name="availableQuantity"
+                      value={form.availableQuantity}
+                      onChange={handleChange}
+                      className="w-full border px-3 py-2 rounded"
+                      min={0}
+                      max={form.totalQuantity}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Tối đa: {form.totalQuantity}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1">Trạng thái</label>
+                    <select
+                      name="status"
+                      value={form.status}
+                      onChange={handleChange}
+                      className="w-full border px-3 py-2 rounded"
+                      required
+                    >
+                      <option value="available">Có sẵn</option>
+                      <option value="maintenance">Đang bảo trì</option>
+                      <option value="broken">Đã hỏng</option>
+                      <option value="unavailable">Hết hàng</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-1">URL Hình ảnh</label>
+                    <input
+                      type="url"
+                      name="imageUrl"
+                      value={form.imageUrl}
+                      onChange={handleChange}
+                      className="w-full border px-3 py-2 rounded"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                </div>
+                {form.imageUrl && (
+                  <div className="mt-2">
+                    <img
+                      src={form.imageUrl}
+                      alt="Preview"
+                      className="max-h-40 object-contain"
+                      onError={e => (e.target.style.display = 'none')}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <div><b>Ngày mượn:</b> {detail.borrowDate ? new Date(detail.borrowDate).toLocaleDateString() : ''}</div>
-              <div><b>Ngày trả dự kiến:</b> {detail.expectedReturnDate ? new Date(detail.expectedReturnDate).toLocaleDateString() : '-'}</div>
-              <div><b>Ngày trả thực tế:</b> {detail.actualReturnDate ? new Date(detail.actualReturnDate).toLocaleDateString() : '-'}</div>
-              <div><b>Lý do mượn:</b> {detail.notes}</div>
-              <div>
-                <b>Trạng thái:</b>
-                <span className={`ml-2 px-2 py-1 rounded text-sm ${STATUS_COLORS[detail.status]}`}>
-                  {STATUS_LABELS[detail.status]}
-                </span>
+              <div className="flex justify-end mt-4">
+                <button
+                  type="button"
+                  className="mr-2 px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                  onClick={closeModal}
+                >
+                  Hủy
+                </button>
+                <button type="submit" className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">
+                  {editItem ? 'Lưu' : 'Thêm'}
+                </button>
               </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block font-semibold mb-2">Ghi chú admin:</label>
-              <textarea
-                className="w-full border px-3 py-2 rounded"
-                value={adminNotes}
-                onChange={e => setAdminNotes(e.target.value)}
-                rows={3}
-                disabled={detail.status !== 'pending'}
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-end">
-              <button
-                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-                onClick={closeDetail}
-                disabled={actionLoading}
-              >
-                Đóng
-              </button>
-
-              {detail.status === 'pending' && (
-                <>
-                  <button
-                    className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-                    onClick={() => handleStatus('approved')}
-                    disabled={actionLoading}
-                  >
-                    Duyệt
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-                    onClick={() => handleStatus('rejected')}
-                    disabled={actionLoading}
-                  >
-                    Từ chối
-                  </button>
-                </>
-              )}
-
-              {detail.status === 'approved' && (
-                <button
-                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                  onClick={() => showConfirmDialog('borrow', 'Xác nhận cho mượn thiết bị? Số lượng khả dụng sẽ giảm 1.')}
-                  disabled={actionLoading}
-                >
-                  Xác nhận đã mượn
-                </button>
-              )}
-
-              {detail.status === 'borrowed' && (
-                <button
-                  className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
-                  onClick={() => showConfirmDialog('return', 'Xác nhận đã trả thiết bị? Số lượng khả dụng sẽ tăng 1.')}
-                  disabled={actionLoading}
-                >
-                  Xác nhận đã trả
-                </button>
-              )}
-            </div>
+            </form>
           </div>
         </div>
       )}
-
-      {confirmAction && (
+      {detailItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Xác nhận thao tác</h3>
-            <p className="mb-6">{confirmAction.message}</p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-                onClick={() => setConfirmAction(null)}
-                disabled={actionLoading}
-              >
-                Hủy
-              </button>
-              <button
-                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                onClick={() => {
-                  if (confirmAction.action === 'borrow') {
-                    handleConfirmBorrow();
-                  } else if (confirmAction.action === 'return') {
-                    handleConfirmReturn();
-                  }
-                  setConfirmAction(null);
-                }}
-                disabled={actionLoading}
-              >
-                Xác nhận
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
+            <h3 className="text-xl font-bold mb-4">Chi tiết thiết bị</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                {detailItem.imageUrl && (
+                  <img
+                    src={detailItem.imageUrl}
+                    alt={detailItem.name}
+                    className="w-full object-contain rounded"
+                    style={{ maxHeight: '300px' }}
+                  />
+                )}
+              </div>
+              <div>
+                <div className="mb-2">
+                  <b>Tên thiết bị:</b> {detailItem.name}
+                </div>
+                <div className="mb-2">
+                  <b>Mô tả:</b> {detailItem.description}
+                </div>
+                <div className="mb-2">
+                  <b>Tổng số lượng:</b> {detailItem.totalQuantity}
+                </div>
+                <div className="mb-2">
+                  <b>Số lượng khả dụng:</b> {detailItem.availableQuantity}
+                </div>
+                <div className="mb-2">
+                  <b>Trạng thái:</b>
+                  <span
+                    className={`ml-2 px-2 py-1 rounded text-sm ${
+                      detailItem.status === 'available'
+                        ? 'bg-green-100 text-green-800'
+                        : detailItem.status === 'maintenance'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : detailItem.status === 'broken'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {detailItem.status === 'available'
+                      ? 'Có sẵn'
+                      : detailItem.status === 'maintenance'
+                      ? 'Đang bảo trì'
+                      : detailItem.status === 'broken'
+                      ? 'Đã hỏng'
+                      : 'Không khả dụng'}
+                  </span>
+                </div>
+                {detailItem.createdAt && (
+                  <div className="mb-2">
+                    <b>Ngày tạo:</b> {new Date(detailItem.createdAt).toLocaleString()}
+                  </div>
+                )}
+                {detailItem.updatedAt && (
+                  <div className="mb-2">
+                    <b>Cập nhật lần cuối:</b> {new Date(detailItem.updatedAt).toLocaleString()}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400" onClick={closeDetail}>
+                Đóng
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default RequestsList;
+export default EquipmentList
